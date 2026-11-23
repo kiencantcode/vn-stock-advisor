@@ -1,0 +1,8 @@
+.venv/
+.research/
+__pycache__/
+data/cache/
+output/demo/
+output/history/daily.log
+*.tmp
+_site/

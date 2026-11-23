@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>VN Stock Advisor</title><link rel="icon" href="data:,"><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><div><h1>VN Stock Advisor</h1><p id="meta" class="muted">Loading…</p></div>
+<div class="actions"><button id="update" class="primary">Update now</button><button id="setup">Button settings</button></div></header>
+<p id="status" class="status" role="status" hidden></p>
+<section id="panel" class="card" hidden>
+<h2>Button settings</h2>
+<p>Without a key, <b>Update now</b> opens GitHub, where you press <b>Run workflow</b>. To update with one click, add a GitHub key (only the repository owner can do this):</p>
+<ol><li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub: new fine-grained token</a>.</li>
+<li>Choose an expiry date. Under Repository access, pick <b>Only select repositories</b> and choose only this repository.</li>
+<li>Under Permissions, set <b>Actions</b> to <b>Read and write</b>. Leave everything else alone.</li>
+<li>Generate it, copy it, and paste it here.</li></ol>
+<p class="muted">The key stays in this browser and is sent only to GitHub. Never use a key with other permissions, and don't do this on a shared computer. Other pages under the same github.io address could read a remembered key.</p>
+<div class="row"><input id="token" type="password" autocomplete="off" placeholder="github_pat_…" aria-label="GitHub key">
+<label><input id="remember" type="checkbox"> Remember on this device</label>
+<button id="save" class="primary">Save</button><button id="forget">Remove key</button></div></section>
+<p id="verdict" class="notice"></p>
+<nav role="tablist"><button data-tab="rank" class="on">Ranking</button><button data-tab="charts">5-day forecast</button><button data-tab="acc">Accuracy</button><button data-tab="help">Help</button></nav>
+<div class="row filters" id="filters"><input id="q" type="search" placeholder="Search stock" aria-label="Search stock">
+<select id="sector" aria-label="Sector"><option value="">All sectors</option></select></div>
+<section id="rank"></section><section id="charts" hidden></section><section id="acc" hidden></section>
+<section id="help" hidden class="card">
+<h2>How to use this page</h2>
+<ol><li>It updates by itself after the market closes, around 16:30 Vietnam time, Monday to Friday. GitHub can start late.</li>
+<li>Press <b>Update now</b> to update sooner. It takes about 3 to 10 minutes. Press it after 15:00 to include today's close.</li>
+<li>Click a row in Ranking to see that stock's chart.</li></ol>
+<h3>Words</h3><dl>
+<dt>80% range</dt><dd>The close should land here about 8 times in 10. It can be up or down.</dd>
+<dt>Buy zone</dt><dd>About half the time, the price dips to the lower number within 5 sessions.</dd>
+<dt>Take profit</dt><dd>Reached about 1 time in 4.</dd><dt>Stop loss</dt><dd>Reached at most about 1 time in 10.</dd>
+<dt>High rank</dt><dd>Top 20%. Perhaps better than the other stocks, not "will go up".</dd>
+<dt>High risk</dt><dd>Three or more days down over 6% in the last 20 sessions.</dd>
+<dt>Paused</dt><dd>Live results show the ranking is going wrong.</dd></dl>
+<p>Prices are in thousands of VND. These levels have not been tested as a trading plan. Not investment advice.</p></section>
+<footer class="muted"><a href="report.html">Vietnamese report</a> · <a href="forecast.html">Vietnamese charts</a> · <a href="GUIDE.pdf">Guide (PDF)</a> · <a id="repo" href="#">Source code</a></footer>
+<script src="app.js"></script></body></html>

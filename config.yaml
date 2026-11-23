@@ -1,0 +1,31 @@
+# Cấu hình dự án. Sửa danh sách mã theo ý bạn.
+provider: auto          # auto | entrade | vnstock | synthetic
+history_days: 4900      # ~13 năm; mô hình cần nhiều chu kỳ thị trường
+horizon: 5              # dự báo N phiên tới (kết quả trong REPORT.md là với N = 5)
+min_history: 260        # mã có ít phiên hơn sẽ bị bỏ qua
+
+portfolio:
+  top_n: 6              # số mã nắm giữ trong kiểm định
+  keep_rank: 18         # đang giữ thì chỉ bán khi rớt khỏi hạng này (giảm phí)
+  round_trip_cost: 0.004  # giả định: phí mua + bán + thuế bán + trượt giá = 0.4%
+
+validation:
+  start: 2018-01-01
+  holdout: 2023-01-01   # cổng tín hiệu chỉ dùng kết quả từ ngày này
+  min_net_t: 1.65       # lợi nhuận sau phí phải có t-stat tối thiểu này mới cho tín hiệu MUA
+  max_age_days: 30      # tự kiểm định lại sau N ngày
+
+sectors:
+  Ngan hang: [VCB, TCB, ACB, MBB, CTG, BID]
+  Thep: [HPG, HSG, NKG]
+  Bat dong san: [VHM, VIC, NVL, DXG, KDH]
+  Chung khoan: [SSI, VND, HCM, VCI]
+  Cong nghe: [FPT, CMG]
+  Tieu dung: [VNM, MWG, PNJ, MSN]
+  Dau khi: [GAS, PVD, PLX, BSR]
+  Dien nuoc: [POW, REE, NT2]
+
+# Chỉ để huấn luyện (không xuất tín hiệu)
+train_extra: [VPB, HDB, STB, SHB, VIB, TPB, LPB, EIB, MSB, SSB, VRE, PDR, DIG, NLG, KBC, HDG, BCM,
+  VGC, FTS, BSI, CTS, VIX, SAB, VJC, GVR, DGC, DCM, DPM, PVT, GMD, HAH, VHC, ANV, DBC, PC1, GEX,
+  BWE, CTD, HHV, VCG, BVH, DHG, FRT, DGW]

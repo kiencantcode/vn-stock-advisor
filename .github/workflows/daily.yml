@@ -1,0 +1,59 @@
+name: daily-update
+on:
+  schedule:
+    - cron: "30 9 * * 1-5"   # 16:30 giờ Việt Nam, sau khi HOSE đóng cửa
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ["web/**", "GUIDE.pdf", ".github/workflows/daily.yml"]   # chỉ xuất bản lại trang
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
+permissions: {}
+jobs:
+  update:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/cache@v4
+        with:
+          path: data/cache
+          key: prices-${{ github.run_id }}
+          restore-keys: prices-
+      - run: pip install -r requirements.txt
+      - run: python run.py
+      - name: Commit kết quả
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output
+          git diff --cached --quiet || git commit -m "Cập nhật dự báo $(TZ=Asia/Ho_Chi_Minh date +%F)"
+          git pull --rebase
+          git push
+  deploy:
+    needs: update
+    if: always() && (needs.update.result == 'success' || github.event_name == 'push')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - run: |
+          mkdir _site
+          cp web/* GUIDE.pdf output/site.json output/report.html output/forecast.html _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+      - id: deployment
+        uses: actions/deploy-pages@v4
