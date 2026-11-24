@@ -18,10 +18,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with: { python-version: "3.12" }
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: data/cache
           key: prices-${{ github.run_id }}
@@ -46,14 +46,20 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.first.outputs.page_url || steps.second.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: { ref: main }
       - run: |
           mkdir _site
           cp web/* GUIDE.pdf output/site.json output/report.html output/forecast.html _site/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+      - id: first
+        continue-on-error: true   # gói vừa tải lên đôi khi chưa sẵn sàng
+        uses: actions/deploy-pages@v5
+      - if: steps.first.outcome == 'failure'
+        run: sleep 45
+      - id: second
+        if: steps.first.outcome == 'failure'
+        uses: actions/deploy-pages@v5
