@@ -74,3 +74,10 @@ Mỗi lần `python run.py` tạo `output/forecast.html`: biểu đồ và dải
   thống kê (t >= 2.4) trên 500 phiên gần nhất.
 - Ghi vào `output/history/forecasts.csv` (không ghi đè); `python run.py --score` chấm bằng giá thật.
 - Mỗi lần chạy khoảng 1,5 phút.
+
+## Kế hoạch 70/30 và mô hình 1 tháng (trên giấy)
+
+- Trang web, mục **My 70/30 plan**: nhập số tiền VND; 70% dài hạn (quỹ chỉ số E1VFVN30), 30% ngắn hạn.
+- Phần 30%: `advisor/short.py` xếp hạng 100 mã HOSE thanh khoản nhất cho ~20 phiên tới, đổi mã mỗi 10 phiên, giữ 6 mã. **Chỉ theo dõi trên giấy** ít nhất 6 tháng; kiểm tra áp lực chưa đạt, xem `LONGTERM_REPORT_V2.md`.
+- Nhật ký chỉ ghi thêm: `output/history/short_rankings.csv`. Danh mục giấy được dựng lại từ nhật ký này; bản ghi lưu sau 9:00 phiên kế tiếp bị loại.
+- `advisor/vnd.py` lấy giá trị khớp lệnh thật từ VNDirect để sửa lỗi rò rỉ ở hai đặc trưng `turn` và `illiq` (24/11/2026). Vì sửa mô hình, điểm sống được tính lại từ đầu. Số liệu trong `REPORT.md` và `GUIDE.pdf` có trước lần sửa này.

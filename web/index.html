@@ -19,20 +19,27 @@
 <label><input id="remember" type="checkbox"> Remember on this device</label>
 <button id="save" class="primary">Save</button><button id="forget">Remove key</button></div></section>
 <p id="verdict" class="notice"></p>
-<nav role="tablist"><button data-tab="rank" class="on">Ranking</button><button data-tab="charts">5-day forecast</button><button data-tab="acc">Accuracy</button><button data-tab="help">Help</button></nav>
+<nav role="tablist"><button data-tab="plan" class="on">My 70/30 plan</button><button data-tab="rank">1-month ranking</button><button data-tab="charts">5-day forecast</button><button data-tab="acc">Accuracy</button><button data-tab="help">Help</button></nav>
 <div class="row filters" id="filters"><input id="q" type="search" placeholder="Search stock" aria-label="Search stock">
 <select id="sector" aria-label="Sector"><option value="">All sectors</option></select></div>
-<section id="rank"></section><section id="charts" hidden></section><section id="acc" hidden></section>
+<section id="plan"><div class="card row"><label for="money"><b>My money</b></label><input id="money" inputmode="numeric" autocomplete="off" maxlength="18"><span>VND</span><span class="muted">Saved only in this browser.</span></div><div id="planout"></div></section><section id="rank" hidden></section><section id="charts" hidden></section><section id="acc" hidden></section>
 <section id="help" hidden class="card">
 <h2>How to use this page</h2>
 <ol><li>It updates by itself after the market closes, around 16:30 Vietnam time, Monday to Friday. GitHub can start late.</li>
 <li>Press <b>Update now</b> to update sooner. It takes about 3 to 10 minutes. Press it after 15:00 to include today's close.</li>
-<li>Click a row in Ranking to see that stock's chart.</li></ol>
-<h3>Words</h3><dl>
+<li>In <b>My 70/30 plan</b>, type your money in VND to see the split: 70% long-term in an index fund, 30% for the short-term model.</li>
+<li>The short-term model is <b>paper only</b>. Don't buy its stocks with real money until it has proved itself live.</li></ol>
+<h3>Words: plan and 1-month ranking</h3><dl>
+<dt>E1VFVN30</dt><dd>A fund you buy like a stock. It follows the 30 biggest stocks on HOSE.</dd>
+<dt>Paper</dt><dd>Pretend trading with live prices. No real money.</dd>
+<dt>1-month ranking</dt><dd>100 of the most traded HOSE stocks, ordered by which the model thinks will do best against the others over about 20 sessions. It learns again from all known prices at every update.</dd>
+<dt>Paper rules</dt><dd>Every 10 sessions: hold 6 stocks in equal parts, sell one only if it falls below rank 18, trade at the next session's close, 0.4% cost for a buy and sell, no buying near the ceiling price or selling near the floor price.</dd>
+<dt>Odd lot</dt><dd>Fewer than 100 shares. Your broker must support odd-lot orders.</dd></dl>
+<h3>Words: 5-day forecast</h3><dl>
 <dt>80% range</dt><dd>The close should land here about 8 times in 10. It can be up or down.</dd>
 <dt>Buy zone</dt><dd>About half the time, the price dips to the lower number within 5 sessions.</dd>
 <dt>Take profit</dt><dd>Reached about 1 time in 4.</dd><dt>Stop loss</dt><dd>Reached at most about 1 time in 10.</dd>
-<dt>High rank</dt><dd>Top 20%. Perhaps better than the other stocks, not "will go up". Neighbouring ranks mean little: small calculation differences can swap them.</dd>
+<dt>High rank</dt><dd>Top 20%. Perhaps better than the other stocks, not "will go up". This is the older 5-day ranking of 31 stocks.</dd>
 <dt>High risk</dt><dd>Three or more days down over 6% in the last 20 sessions.</dd>
 <dt>Paused</dt><dd>Live results show the ranking is going wrong.</dd></dl>
 <p>Prices are in thousands of VND. These levels have not been tested as a trading plan. Not investment advice.</p></section>
