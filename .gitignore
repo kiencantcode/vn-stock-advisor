@@ -6,3 +6,4 @@ output/demo/
 output/history/daily.log
 *.tmp
 _site/
+research/*.pkl
