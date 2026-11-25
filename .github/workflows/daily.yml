@@ -1,7 +1,15 @@
 name: daily-update
 on:
   schedule:
-    - cron: "30 9 * * 1-5"   # 16:30 giờ Việt Nam, sau khi HOSE đóng cửa
+    # giờ VN 15:47, 17:13, 18:43, 20:23, 22:17 và 5:37, 7:07 sáng hôm sau: GitHub hay trễ hoặc bỏ lịch.
+    # Lần chạy đầu thành công là đủ, các lần sau tự bỏ qua (advisor/fresh.py).
+    - cron: "47 8 * * 1-5"
+    - cron: "13 10 * * 1-5"
+    - cron: "43 11 * * 1-5"
+    - cron: "23 13 * * 1-5"
+    - cron: "17 15 * * 1-5"
+    - cron: "37 22 * * 1-5"
+    - cron: "7 0 * * 2-6"
   workflow_dispatch: {}
   push:
     branches: [main]
@@ -19,16 +27,24 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
+      - id: fresh
+        if: github.event_name == 'schedule'
+        run: python3 advisor/fresh.py >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v7
+        if: steps.fresh.outputs.skip != 'true'
         with: { python-version: "3.12" }
       - uses: actions/cache@v6
+        if: steps.fresh.outputs.skip != 'true'
         with:
           path: data/cache
           key: prices-${{ github.run_id }}
           restore-keys: prices-
       - run: pip install -r requirements.txt
+        if: steps.fresh.outputs.skip != 'true'
       - run: python run.py
+        if: steps.fresh.outputs.skip != 'true'
       - name: Commit kết quả
+        if: steps.fresh.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

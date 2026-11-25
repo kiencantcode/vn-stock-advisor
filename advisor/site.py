@@ -36,7 +36,7 @@ def write(provider, updated, df, frames, fc, val, acc, live, warnings, steady=No
                 s["fc"].append({k: round(x["close"] * math.exp(x[k]), 3) for k in ("center", "lo80", "lo50", "hi50", "hi80")})
         stocks.append(s)
     out = {"updated": updated, "asof": df["ngay_du_lieu"].iloc[0] if len(df) else None, "gate": val["gate"],
-           "holdout": val.get("holdout"), "accuracy": acc["horizons"], "live": live, "warnings": warnings,
+           "holdout": val.get("holdout"), "accuracy": acc["horizons"], "tested": acc.get("asof"), "live": live, "warnings": warnings,
            "steady": steady, "forecast": None if fc is None else {"best": fc["best"], "cover": fc["cover"]}, "stocks": stocks}
     path = os.path.join(outdir_for(provider), "site.json")
     if steady is None and provider != "synthetic" and os.path.exists(path):  # giữ kết quả cũ, trang hiện ngày của nó

@@ -1,7 +1,7 @@
 """Danh sách ổn định để giữ từ 1 tuần trở lên: 100 mã HOSE thanh khoản nhất, theo dõi TRÊN GIẤY.
 
-Luật cố định (STEADY_REPORT.md): LightGBM nhãn 20 phiên, hạng trung bình 20 phiên, xem lại mỗi 20 phiên, giữ 10 mã,
-mã đang giữ chỉ bán khi rớt khỏi hạng 30, phí 0.4% khứ hồi, khớp giá đóng cửa phiên kế tiếp.
+Luật cố định (STEADY_REPORT.md): LightGBM nhãn 20 phiên, hạng trung bình 20 phiên, xem lại mỗi 5 phiên, giữ 6 mã,
+mã đang giữ chỉ bán khi rớt khỏi hạng 18, phí 0.4% khứ hồi. Mua: đặt ở giá đóng cửa gần nhất, chưa khớp thì mua giá đóng cửa.
 """
 from __future__ import annotations
 
@@ -18,8 +18,8 @@ from .track import _nw_t
 
 LOG = os.path.join(ROOT, "output", "history", "steady_rankings.csv")
 ETF = "E1VFVN30"
-H, SMOOTH, STEP, N, KEEP, TOP, COST, SEEDS = 20, 20, 20, 10, 30, 100, 0.004, 3
-SPEC = f"v3|{H}|{SMOOTH}|{STEP}|{N}|{KEEP}|{TOP}|{COST}|{SEEDS}"
+H, SMOOTH, STEP, N, KEEP, TOP, COST, SEEDS = 20, 20, 5, 6, 18, 100, 0.004, 3
+SPEC = f"v4|lim|{H}|{SMOOTH}|{STEP}|{N}|{KEEP}|{TOP}|{COST}|{SEEDS}"
 
 
 def model_id() -> str:
@@ -34,7 +34,7 @@ def wide(p: pd.DataFrame) -> dict[str, pd.DataFrame]:
     c = p.pivot(index="date", columns="code", values="adClose")
     c = c[c.notna().sum(axis=1) > 100]
     w = {k: p.pivot(index="date", columns="code", values=k).reindex(c.index)
-         for k in ("close", "nmValue", "floor")}
+         for k in ("close", "nmValue", "floor", "adOpen", "adLow")}
     return {"c": c, **w}
 
 
@@ -94,7 +94,16 @@ def rank_today(x: pd.DataFrame, w: dict) -> pd.DataFrame:
     now = now.sort_values("score", ascending=False, kind="stable").reset_index(drop=True)
     now["rank"] = now.index + 1
     now["price"] = w["close"].loc[asof].reindex(now["sym"]).values
+    for k, v in price_range(x, D, len(D) - 1).items():
+        now[k] = v * now["vol20"].values * H ** 0.5
     return now
+
+
+def price_range(x: pd.DataFrame, D, i: int) -> dict:
+    """Phân vị 10% và 90% của (lợi suất 20 phiên / độ biến động) trong ~1 năm gần nhất, chỉ kết quả đã biết ở phiên i."""
+    z = x[(x["date"] >= D[max(0, i - H - 250)]) & (x["date"] <= D[i - H])]
+    q = (np.expm1(z["fwd"]) / (z["vol20"] * H ** 0.5)).replace([np.inf, -np.inf], np.nan).dropna()
+    return {"lo20": float(q.quantile(0.1)), "hi20": float(q.quantile(0.9))}
 
 
 def _read(path: str = LOG) -> pd.DataFrame:
@@ -134,15 +143,15 @@ def valid_days(c: pd.DataFrame, log: pd.DataFrame) -> tuple[dict, int]:
     return out, late
 
 
-def replay(c: pd.DataFrame, days: dict) -> dict:
+def replay(c: pd.DataFrame, op: pd.DataFrame, lo: pd.DataFrame, days: dict) -> dict:
     """Dựng lại danh mục giấy từ nhật ký. Không mua ở giá trần, không bán ở giá sàn."""
-    res = {"nav": pd.Series(dtype=float), "hold": {}, "pending": None, "next_in": None, "trades": []}
+    res = {"nav": pd.Series(dtype=float), "hold": {}, "pending": None, "next_in": None, "trades": [], "entry": {}}
     if not days:
         return res
     grid, r = c.index, c.ffill().pct_change(fill_method=None)
     r = r.where(r.abs() < 0.5).fillna(0)
     off = c.isna()
-    w, cash, last_sig, todo, out = {}, 1.0, None, None, []
+    w, cash, last_sig, todo, out, entry = {}, 1.0, None, None, [], {}
     for i in range(min(days), len(grid)):
         for s in w:
             w[s] *= 1 + r[s].iloc[i]
@@ -153,22 +162,33 @@ def replay(c: pd.DataFrame, days: dict) -> dict:
             v, mv, nt = sum(w.values()) + cash, r.iloc[i], off.iloc[i]
             rk = {s: n + 1 for n, s in enumerate(todo)}
             keep = [s for s in w if rk.get(s, 999) <= KEEP or mv[s] < -0.065 or nt[s]]
-            new = [s for s in todo if s in c and s not in keep and mv[s] <= 0.065 and not nt[s]][:max(0, N - len(keep))]
-            tgt = {s: v / max(N, len(keep) + len(new)) for s in keep + new}
+            new = [s for s in todo if s in c and s not in w and mv[s] <= 0.065 and not nt[s]][:max(0, N - len(keep))]
+            each, tgt, fee = v / max(N, len(keep) + len(new)), {}, 0.0
             for s in w:
-                want = tgt.get(s, 0.0)
-                if nt[s] or (mv[s] < -0.065 and want < w[s]) or (mv[s] > 0.065 and want > w[s]):
-                    tgt[s] = w[s]
-            over = sum(tgt.values()) - v
-            if over > 0 and new:
-                f = max(0.0, 1 - over / sum(tgt[s] for s in new))
-                for s in new:
-                    tgt[s] *= f
-            fee = sum(abs(tgt.get(s, 0) - w.get(s, 0)) for s in {*tgt, *w}) / 2 * COST
+                a = each if s in keep else 0.0
+                if nt[s] or (mv[s] < -0.065 and a < w[s]) or (mv[s] > 0.065 and a > w[s]):
+                    a = w[s]
+                fee += abs(a - w[s]) * COST / 2
+                if a > 0:
+                    tgt[s] = a
+            cash = v - fee - sum(tgt.values())
+            part = each * min(1.0, max(0.0, cash) / (each * len(new) * (1 + COST / 2))) if new else 0.0
+            fill = {}
+            for s in new:  # lệnh đặt ở giá đóng cửa phiên tín hiệu; chưa khớp thì mua giá đóng cửa phiên này
+                last, px = c[s].ffill().iloc[i - 1], c[s].iloc[i]
+                fill[s] = min(op[s].iloc[i], last) if lo[s].iloc[i] <= last else px
+                cash -= part * (1 + COST / 2)
+                tgt[s] = part * px / fill[s]
             res["trades"].append({"date": grid[i].date().isoformat(), "buy": new,
                                   "sell": [s for s in w if not tgt.get(s)]})
-            w = {s: a * (1 - fee / v) for s, a in tgt.items() if a > 0}
-            cash = v - fee - sum(w.values())
+            old, w = w, tgt
+            for s, a in w.items():  # giá vốn trung bình (theo giá điều chỉnh)
+                px, was = c[s].iloc[i] if not nt[s] else np.nan, old.get(s, 0.0)
+                if s not in entry or s not in old:
+                    entry[s] = {"date": grid[i].date().isoformat(), "px": float(fill[s])}
+                elif a > was and px == px:
+                    entry[s]["px"] = float(a / (was / entry[s]["px"] + (a - was) / px))
+            entry = {s: e for s, e in entry.items() if s in w}
             todo = None
         if res["trades"]:
             out.append((grid[i], sum(w.values()) + cash))
@@ -177,6 +197,7 @@ def replay(c: pd.DataFrame, days: dict) -> dict:
     nav = sum(w.values()) + cash
     res["nav"] = pd.Series(dict(out), dtype=float)
     res["hold"] = {s: a / nav for s, a in w.items()}
+    res["entry"] = {s: entry[s] for s in w}
     if todo is not None:  # tín hiệu phiên mới nhất, khớp ở phiên sau
         rk = {s: n + 1 for n, s in enumerate(todo)}
         keep = [s for s in w if rk.get(s, 999) <= KEEP]
@@ -206,16 +227,19 @@ def build(p: pd.DataFrame, index: pd.DataFrame, etf: pd.DataFrame, log: bool = T
     if log:
         append(now)
     days, late = valid_days(c, _read())
-    pf = replay(c, days)
+    pf = replay(c, w["adOpen"], w["adLow"], days)
+    raw, adj = w["close"].ffill().iloc[-1], c.ffill().iloc[-1]
+    held = {s: {"date": q["date"], "pnl": float(adj[s] / q["px"] - 1), "price": float(raw[s]),
+                "buy": float(q["px"] * raw[s] / adj[s])} for s, q in pf["entry"].items()}  # giá mua quy về mặt bằng giá hôm nay
     nav, e, live = pf["nav"], etf.set_index("date")["close"], None
     if len(nav):
         fr = e.reindex(nav.index).ffill().pct_change(fill_method=None).fillna(0)
         live = {"start": nav.index[0].date().isoformat(), "sessions": len(nav) - 1,
                 "fund": float((1 + fr).prod()), "model": float(nav.iloc[-1])}
-    rows = [{"sym": r["sym"], "rank": int(r["rank"]), "ago5": r["ago5"], "ago20": r["ago20"], "price": r["price"], "ret20": r["ret20"],
+    rows = [{"sym": r["sym"], "rank": int(r["rank"]), "ago5": r["ago5"], "ago20": r["ago20"], "lo20": r["lo20"], "hi20": r["hi20"], "price": r["price"], "ret20": r["ret20"],
              "vol": r["vol20"] * 250 ** 0.5, "floor20": int(r["floor20"]), "lq": int(r["lqr"])}
             for r in now.to_dict("records")]
     return {"asof": now["date"].iloc[0].date().isoformat(), "model_id": model_id(), "rows": rows,
-            "hold": pf["hold"], "pending": pf["pending"], "next_in": pf["next_in"], "trades": pf["trades"][-10:],
+            "hold": pf["hold"], "held": held, "pending": pf["pending"], "next_in": pf["next_in"], "trades": pf["trades"][-10:],
             "live": live, "skill": skill(c, days), "late": late, "logged": len(days),
             "fund": {"sym": ETF, "price": float(e.iloc[-1]), "date": etf["date"].iloc[-1].date().isoformat()}}

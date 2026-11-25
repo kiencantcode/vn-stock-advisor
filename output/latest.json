@@ -1,42 +1,43 @@
 {
  "info": {
-  "updated": "2026-11-25 23:02",
+  "updated": "2026-11-26 00:01",
   "horizon": 5,
   "provider": "auto",
   "n_ranked": 31,
   "validation": {
    "dev": {
     "periods": 251,
-    "rank_ic": 0.06800764045260028,
-    "ic_t": 4.652087315770887,
-    "gross_excess_yr": 0.1222237395290669,
-    "net_excess_yr": 0.07746942346000982,
-    "net_t": 1.1372236167162508,
-    "turnover": 0.2237715803452855,
+    "rank_ic": 0.0665516064005899,
+    "ic_t": 4.639995986774341,
+    "gross_excess_yr": 0.09891952322383961,
+    "net_excess_yr": 0.05443081140445048,
+    "net_t": 0.7551235166949805,
+    "turnover": 0.22244355909694552,
     "coverage80": 0.7953216374269005
    },
    "holdout": {
     "periods": 192,
-    "rank_ic": 0.03641190161505273,
-    "ic_t": 2.3474471293179633,
-    "gross_excess_yr": 0.019504738107776417,
-    "net_excess_yr": -0.02077303967000135,
-    "net_t": -0.2923512763738645,
-    "turnover": 0.20138888888888884,
+    "rank_ic": 0.03919861238926668,
+    "ic_t": 2.540230798624924,
+    "gross_excess_yr": 0.04187527858888999,
+    "net_excess_yr": -0.002569165855554444,
+    "net_t": -0.04267744730723117,
+    "turnover": 0.2222222222222222,
     "coverage80": 0.7978151260504202
    },
    "gate": false,
    "sig": "17215d18b2b0c829",
-   "run_at": "2026-11-23T19:59:11"
+   "asof": "2026-11-25",
+   "run_at": "2026-11-25T23:39:22"
   },
   "accuracy": [
    "Đo trên dữ liệu từ 2023-01-01; mô hình tại mỗi thời điểm chỉ học từ quá khứ",
-   "Ngắn hạn (~1 tuần): mã top thắng trung vị 49.6% (chọn ngẫu nhiên 48.3%); mã top tăng giá 50.1% (mọi mã 49.6%); IC +0.030 (t=2.6); sau phí -0.8%/năm, từ -4.3% đến +3.7% tuỳ ngày bắt đầu (t=-0.1) => Có kỹ năng nhỏ, CHƯA chứng minh có lời sau phí",
-   "   IC từng năm: 2023 +0.032, 2024 +0.049, 2025 +0.018, 2026 +0.019",
-   "Trung hạn (~1 tháng): mã top thắng trung vị 49.1% (chọn ngẫu nhiên 48.4%); mã top tăng giá 51.5% (mọi mã 51.4%); IC +0.007 (t=0.3); sau phí +0.4%/năm, từ -3.0% đến +3.1% tuỳ ngày bắt đầu (t=0.0) => KHÔNG có bằng chứng kỹ năng, không nên dùng",
-   "   IC từng năm: 2023 -0.059, 2024 +0.055, 2025 +0.032, 2026 -0.001",
-   "Dài hạn (~3 tháng): mã top thắng trung vị 47.7% (chọn ngẫu nhiên 48.4%); mã top tăng giá 52.2% (mọi mã 52.7%); IC -0.006 (t=-0.2); sau phí -1.8%/năm, từ -7.9% đến +4.6% tuỳ ngày bắt đầu (t=-0.3) => KHÔNG có bằng chứng kỹ năng, không nên dùng",
-   "   IC từng năm: 2023 -0.091, 2024 +0.071, 2025 +0.048, 2026 -0.081"
+   "Ngắn hạn (~1 tuần): mã top thắng trung vị 49.8% (chọn ngẫu nhiên 48.3%); mã top tăng giá 50.0% (mọi mã 49.6%); IC +0.033 (t=2.9); sau phí -0.3%/năm, từ -5.8% đến +7.3% tuỳ ngày bắt đầu (t=-0.1) => Có kỹ năng nhỏ, CHƯA chứng minh có lời sau phí",
+   "   IC từng năm: 2023 +0.030, 2024 +0.052, 2025 +0.027, 2026 +0.020",
+   "Trung hạn (~1 tháng): mã top thắng trung vị 48.9% (chọn ngẫu nhiên 48.4%); mã top tăng giá 51.5% (mọi mã 51.4%); IC +0.006 (t=0.2); sau phí +0.2%/năm, từ -3.9% đến +6.8% tuỳ ngày bắt đầu (t=0.0) => KHÔNG có bằng chứng kỹ năng, không nên dùng",
+   "   IC từng năm: 2023 -0.061, 2024 +0.046, 2025 +0.033, 2026 +0.005",
+   "Dài hạn (~3 tháng): mã top thắng trung vị 47.5% (chọn ngẫu nhiên 48.4%); mã top tăng giá 51.9% (mọi mã 52.7%); IC -0.009 (t=-0.3); sau phí -2.9%/năm, từ -7.5% đến +1.6% tuỳ ngày bắt đầu (t=-0.4) => KHÔNG có bằng chứng kỹ năng, không nên dùng",
+   "   IC từng năm: 2023 -0.094, 2024 +0.066, 2025 +0.049, 2026 -0.084"
   ],
   "learned": "Mô hình lần này học từ 208,384 mẫu, kết quả mới nhất đã biết: phiên 2026-11-17",
   "live": [

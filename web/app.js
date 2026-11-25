@@ -4,10 +4,10 @@ const onPages = location.hostname.endsWith(".github.io");
 const OWNER = onPages ? location.hostname.split(".")[0] : "";
 const REPO = onPages ? location.pathname.split("/")[1] : "";
 const WORKFLOW = "daily.yml", KEY = `vnsa-key-${REPO}`;
-const SIG = { "MUA": ["Buy", "up"], "HANG CAO": ["High rank", "up"], "TRUNG LAP": ["Neutral", ""], "HANG THAP": ["Low rank", "down"],
-  "RUI RO CAO": ["High risk", "down"], "TAM DUNG": ["Paused", "down"] };
-const SECT = { "Ngan hang": "Banks", "Thep": "Steel", "Bat dong san": "Real estate", "Chung khoan": "Brokers", "Cong nghe": "Technology",
-  "Tieu dung": "Consumer", "Dau khi": "Oil & gas", "Dien nuoc": "Utilities" };
+const SIG = { "MUA": ["Mua", "up"], "HANG CAO": ["Hạng cao", "up"], "TRUNG LAP": ["Trung lập", ""], "HANG THAP": ["Hạng thấp", "down"],
+  "RUI RO CAO": ["Rủi ro cao", "down"], "TAM DUNG": ["Tạm dừng", "down"] };
+const SECT = { "Ngan hang": "Ngân hàng", "Thep": "Thép", "Bat dong san": "Bất động sản", "Chung khoan": "Chứng khoán", "Cong nghe": "Công nghệ",
+  "Tieu dung": "Tiêu dùng", "Dau khi": "Dầu khí", "Dien nuoc": "Điện nước" };
 let D = null, tab = "plan";
 
 function el(tag, attrs = {}, ...kids) {  // text only: never inserts HTML
@@ -22,7 +22,7 @@ function sv(tag, attrs = {}, text) {
 }
 const f2 = (v) => v == null ? "–" : Number(v).toFixed(v >= 50 ? 1 : 2);
 const pc = (v, s) => v == null ? "–" : (s && v > 0 ? "+" : "") + (v * 100).toFixed(1) + "%";
-const tv = (v) => v == null ? "not enough data" : "t = " + v.toFixed(1);
+const tv = (v) => v == null ? "chưa đủ dữ liệu" : "t = " + v.toFixed(1);
 const store = { get() { try { return sessionStorage.getItem(KEY) || localStorage.getItem(KEY); } catch { return null; } },
   set(v, keep) { this.del(); try { (keep ? localStorage : sessionStorage).setItem(KEY, v); } catch { } },
   del() { try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); } catch { } } };
@@ -40,47 +40,50 @@ function filtered() {
 }
 const money = () => Number($("money").value.replace(/\D/g, "")) || 0;
 const vnd = (v) => Math.round(v).toLocaleString("vi-VN") + " VND";
-const list = (a) => a.length ? a.join(", ") : "none";
+const list = (a) => a.length ? a.join(", ") : "không có";
+const rng = (r) => r && r.lo20 != null ? `${f2(r.price * (1 + r.lo20))} – ${f2(r.price * (1 + r.hi20))}` : "–";
+const gain = (v) => el("span", { class: "sig " + (v > 0 ? "up" : v < 0 ? "down" : "") }, pc(v, 1));
 function drawPlan() {
   const m = money(), s = D.steady, out = [];
-  if (!s) return $("planout").replaceChildren(el("p", { class: "notice" }, "This list appears after the next update."));
-  const px = Object.fromEntries(s.rows.map((r) => [r.sym, r]));
-  const line = (sym, w, what) => { const r = px[sym], a = m * w, n = r ? Math.floor(a / (r.price * 1000)) : null;
-    return row([sym, what, r ? String(r.rank) : "over 100", r ? f2(r.price) : "–", pc(w), vnd(a), n == null ? "–" : n.toLocaleString("vi-VN") + (n > 0 && n < 100 ? " (odd lot)" : "")], 2); };
-  const head = ["Stock", "Paper action", "Steady rank", "Price (thousand VND)", "Part", "Amount", "Shares"];
+  if (!s) return $("planout").replaceChildren(el("p", { class: "notice" }, "Danh sách sẽ hiện sau lần cập nhật tới."));
+  const px = Object.fromEntries(s.rows.map((r) => [r.sym, r])), held = s.held || {}, val = m * (s.live ? s.live.model : 1);
+  const line = (sym, w, what) => { const r = px[sym], h = held[sym], p = r ? r.price : h ? h.price : null, a = val * w, n = p ? Math.floor(a / (p * 1000)) : null;
+    return row([sym, what, r ? String(r.rank) : "ngoài 100", f2(p), what.startsWith("Mua") ? el("b", {}, f2(p)) : "–", h ? `${f2(h.buy)} (${h.date})` : "chưa mua", h ? gain(h.pnl) : "–", rng(r), vnd(a),
+      n == null ? "–" : n.toLocaleString("vi-VN") + (n > 0 && n < 100 ? " (lô lẻ)" : "")], 2); };
+  const head = ["Mã", "Việc cần làm (trên giấy)", "Hạng ổn định", "Giá hiện tại", "Giá đặt mua", "Giá đã mua", "Lãi/lỗ", "Khoảng 20 phiên tới (8/10 lần)", "Số tiền", "Số cổ phiếu"];
   if (s.pending) {
     const q = s.pending, all = [...q.keep, ...q.buy];
-    out.push(el("p", { class: "notice" }, `Review day. At the next session's close, buy on paper: ${list(q.buy)}. Sell: ${list(q.sell)}. Keep: ${list(q.keep)}. Then nothing to do for 20 sessions.`),
-      table(head, all.map((x) => line(x, 1 / Math.max(10, all.length), q.buy.includes(x) ? "Buy next session" : "Keep")), 2));
+    out.push(el("p", { class: "notice" }, `Ngày xem lại. Phiên kế tiếp, mua giả: ${list(q.buy)}. Bán: ${list(q.sell)}. Giữ: ${list(q.keep)}. Đặt lệnh đúng giá ở cột Giá đặt mua; nếu đến cuối phiên chưa khớp thì mua ở giá đóng cửa. Mã cần bán thì bán ở giá đóng cửa. Sau đó không cần làm gì trong 5 phiên.`),
+      table(head, [...all.map((x) => line(x, 1 / Math.max(6, all.length), q.buy.includes(x) ? "Mua phiên kế tiếp" : "Giữ")), ...q.sell.map((x) => line(x, s.hold[x] || 0, "Bán phiên kế tiếp"))], 2));
   } else if (Object.keys(s.hold).length) {
-    out.push(el("p", { class: "notice" }, `Nothing to do. ${s.next_in} session(s) until the next review day.`),
-      table(head, Object.entries(s.hold).sort((a, b) => b[1] - a[1]).map(([x, w]) => line(x, w, "Hold")), 2));
+    out.push(el("p", { class: "notice" }, `Không cần làm gì. Còn ${s.next_in} phiên tới ngày xem lại. Chỉ khi đó mới bán mã rớt khỏi hạng 18.`),
+      table(head, Object.entries(s.hold).sort((a, b) => b[1] - a[1]).map(([x, w]) => line(x, w, "Giữ")), 2));
   }
-  out.push(el("p", { class: "muted" }, `From the ${s.asof} close. Paper only, not investment advice.`));
-  if (s.trades.length) out.push(el("h3", {}, "Last paper trades"), table(["Date", "Bought", "Sold"], s.trades.slice().reverse().map((t) => row([t.date, list(t.buy), list(t.sell)], 3)), 3));
-  out.push(el("h2", {}, "Live result (the only clean test)"));
-  if (s.live) out.push(el("p", {}, `Since ${s.live.start}: ${s.live.sessions} session(s).` + (s.live.sessions < 120 ? " Too early to judge: wait for about 120 sessions (6 months)." : "")),
-    table(["", "Change", "Your paper money"], [["Steady picks, after costs", s.live.model], ["E1VFVN30 index fund", s.live.fund]].map(([n, v]) => row([n, pc(v - 1, 1), vnd(m * v)]))));
-  else out.push(el("p", {}, "Starts with the first paper trade."));
-  out.push(el("h2", {}, "Past test, after costs"), table(["Plan", "2018–2022 (used to choose), per year", "2023–2026 (check), per year", "Worst fall 2018–2026"],
-    [["Steady picks", "25%", "14%", "−59%"], ["All 100 stocks equally", "4%", "12%", "−58%"], ["E1VFVN30 fund", "1%", "18%", "−48%"]].map((r) => row(r))),
-    el("p", { class: "notice" }, "Not proven. It beat everything in 2018–2022, but in 2023–2026 it only matched the 100-stock average and trailed the fund. It lost money in 2025 and 2026. Over 20 sessions its picks beat the middle stock 52% of the time in 2023–2026 (57% in 2018–2022)."));
-  const top = s.rows.slice(0, 30); const ag = (v) => v == null ? "–" : String(v);
-  out.push(el("h2", {}, "Steady ranking, top 30"), table(["Rank", "Stock", "Rank 1 week ago", "Rank 1 month ago", "Price (thousand VND)", "Last 20 sessions", "Yearly volatility", "Warning"],
-    top.map((r) => row([String(r.rank), r.sym, ag(r.ago5), ag(r.ago20), f2(r.price), pc(r.ret20, 1), pc(r.vol), r.floor20 >= 3 ? el("span", { class: "sig down" }, "High risk") : ""], 2)), 2));
+  out.push(el("p", { class: "muted" }, `Theo giá đóng cửa ${s.asof}, nghìn đồng. Khoảng 20 phiên không phải giá mục tiêu. Chỉ theo dõi trên giấy, không phải lời khuyên đầu tư.`));
+  if (s.trades.length) out.push(el("h3", {}, "Giao dịch giả gần đây"), table(["Ngày", "Mua", "Bán"], s.trades.slice().reverse().map((t) => row([t.date, list(t.buy), list(t.sell)], 3)), 3));
+  out.push(el("h2", {}, "Kết quả thật từ khi bắt đầu"));
+  if (s.live) out.push(el("p", {}, `Từ ${s.live.start}: ${s.live.sessions} phiên.` + (s.live.sessions < 120 ? " Còn quá sớm để kết luận, cần khoảng 120 phiên (6 tháng)." : "")),
+    table(["", "Thay đổi", "Tiền giả định thành"], [["Danh sách ổn định, sau phí", s.live.model], ["Quỹ chỉ số E1VFVN30", s.live.fund]].map(([n, v]) => row([n, gain(v - 1), vnd(m * v)]))));
+  else out.push(el("p", {}, "Bắt đầu từ lần mua giả đầu tiên."));
+  out.push(el("h2", {}, "Kiểm định quá khứ, mỗi năm"), table(["Cách đầu tư", "2018–2022", "2023–2026", "Giảm nặng nhất 2018–2026"],
+    [["Danh sách ổn định, sau phí", "28%", "19%", "−60%"], ["Mua đều 100 mã, chưa trừ phí", "4%", "12%", "−58%"], ["Quỹ E1VFVN30", "1%", "18%", "−48%"], ["Nếu mỗi năm chỉ chọn cách tốt nhất từ quá khứ", "–", "15%", "−62% (2020–2026)"]].map((r) => row(r))),
+    el("p", { class: "notice" }, "Chưa được chứng minh. Cách này được chọn trong 16.800 trường hợp trên toàn bộ dữ liệu, nên 28% và 19% là con số đẹp hơn thực tế. Dòng cuối mới là ước lượng công bằng: 15% mỗi năm trong 2023–2026, thấp hơn quỹ (18%). Năm 2025 và 2026 cách này đều lỗ. Nếu chỉ mua 50 mã giao dịch nhiều nhất thì còn 12%. Số liệu này tính đến 23/11/2026 và không tự đổi; phần kết quả thật ở trên mới tự cập nhật."));
+  const ag = (v) => v == null ? "–" : String(v);
+  out.push(el("h2", {}, "Hạng ổn định, 30 mã đầu"), table(["Hạng", "Mã", "Hạng 1 tuần trước", "Hạng 1 tháng trước", "Giá", "20 phiên qua", "Khoảng 20 phiên tới", "Biến động năm", "Cảnh báo"],
+    s.rows.slice(0, 30).map((r) => row([String(r.rank), r.sym, ag(r.ago5), ag(r.ago20), f2(r.price), pc(r.ret20, 1), rng(r), pc(r.vol), r.floor20 >= 3 ? el("span", { class: "sig down" }, "Rủi ro cao") : ""], 2)), 2));
   $("planout").replaceChildren(...out);
 }
 function showStock(sym) { $("q").value = sym; go("charts"); }
 function drawRank() {
   const rows = filtered().map((s) => {
     const [name, cls] = SIG[s.signal] || [s.signal, ""], last = s.fc[s.fc.length - 1];
-    const tr = row([String(s.rank), el("button", { class: "link", "aria-label": `Chart for ${s.sym}` }, s.sym), SECT[s.sector] || s.sector, f2(s.price),
-      last ? `${f2(last.lo80)} – ${f2(last.hi80)}` : "–", `${f2(s.buy[0])} – ${f2(s.buy[1])}`, f2(s.target), f2(s.stop), s.rsi.toFixed(0),
+    const tr = row([String(s.rank), el("button", { class: "link", "aria-label": `Biểu đồ ${s.sym}` }, s.sym), SECT[s.sector] || s.sector, f2(s.price),
+      last ? `${f2(last.lo80)} – ${f2(last.hi80)}` : "–", el("b", {}, f2(s.price)), f2(s.target), f2(s.stop), s.rsi.toFixed(0),
       el("span", { class: "sig " + cls }, name)], 3);
     tr.classList.add("click"); tr.addEventListener("click", () => showStock(s.sym)); return tr;
   });
-  $("rank").replaceChildren(el("p", { class: "notice" }, "5-day view. In tests about 42% of its top 6 changed every day, so it is not for week-long holding. Use Steady picks for that, on paper."), rows.length ? table(["Rank", "Stock", "Sector", "Price", "80% range, day 5", "Buy zone", "Take profit", "Stop loss", "RSI", "Signal"], rows, 3)
-    : el("p", { class: "muted" }, "No stock matches."));
+  $("rank").replaceChildren(el("p", { class: "notice" }, "Chỉ nhìn 5 phiên tới. Khi kiểm tra, khoảng 42% nhóm 6 mã đầu thay đổi mỗi ngày, nên không hợp để giữ cả tuần. Muốn giữ lâu hơn, hãy theo Danh sách ổn định, trên giấy. Giá đặt mua chỉ nên thử trên giấy, có hiệu lực 3 phiên: trong 2023–2026 cách này vẫn lỗ trung bình 0,11% mỗi lệnh sau phí."), rows.length ? table(["Hạng", "Mã", "Ngành", "Giá", "Khoảng 80%, phiên 5", "Giá đặt mua", "Chốt lời", "Cắt lỗ", "RSI", "Tín hiệu"], rows, 3)
+    : el("p", { class: "muted" }, "Không có mã phù hợp."));
 }
 function chart(s) {
   const W = 330, H = 190, L = 46, R = 10, T = 10, B = 24, px = s.close, k0 = px.length - 1, n = px.length + s.fc.length;
@@ -88,7 +91,7 @@ function chart(s) {
   let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * .06 || 1; lo -= pad; hi += pad;
   const X = (i) => L + i * (W - L - R) / (n - 1), Y = (v) => T + (hi - v) * (H - T - B) / (hi - lo);
   const pts = (a, o = 0) => a.map((v, i) => `${X(i + o).toFixed(1)},${Y(v).toFixed(1)}`);
-  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${s.sym} last 40 sessions and 5-session forecast` });
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${s.sym}: 40 phiên gần nhất và dự báo 5 phiên` });
   for (let i = 0; i < 4; i++) { const v = lo + pad + i * (hi - lo - 2 * pad) / 3; svg.append(sv("line", { class: "gl", x1: L, x2: W - R, y1: Y(v), y2: Y(v) }), sv("text", { x: L - 5, y: Y(v) + 4, "text-anchor": "end" }, f2(v))); }
   for (const c of ["80", "50"]) svg.append(sv("polygon", { class: "b" + c, points: [...pts(b("hi" + c), k0), ...pts(b("lo" + c), k0).reverse()].join(" ") }));
   svg.append(sv("polyline", { class: "pl", points: pts(px).join(" ") }), sv("polyline", { class: "ml", points: pts(b("center"), k0).join(" ") }));
@@ -99,10 +102,10 @@ function chart(s) {
   svg.addEventListener("pointermove", (e) => {
     const r = svg.getBoundingClientRect(), i = Math.max(0, Math.min(n - 1, Math.round(((e.clientX - r.left) * W / r.width - L) / (W - L - R) * (n - 1))));
     x.setAttribute("x1", X(i)); x.setAttribute("x2", X(i)); x.setAttribute("visibility", "visible"); tip.hidden = false;
-    const p = s.fc[i - k0 - 1]; tip.textContent = p ? `Day +${i - k0}: ${f2(p.lo80)} – ${f2(p.hi80)} (80%)` : `${dm(s.dates[i])}: ${f2(px[i])}`;
+    const p = s.fc[i - k0 - 1]; tip.textContent = p ? `Phiên +${i - k0}: ${f2(p.lo80)} – ${f2(p.hi80)} (80%)` : `${dm(s.dates[i])}: ${f2(px[i])}`;
   });
   svg.addEventListener("pointerleave", () => { tip.hidden = true; x.setAttribute("visibility", "hidden"); });
-  return el("figure", {}, el("figcaption", {}, s.sym + " ", el("span", {}, `rank ${s.rank} · ${f2(s.price)}`)), svg, tip);
+  return el("figure", {}, el("figcaption", {}, s.sym + " ", el("span", {}, `hạng ${s.rank} · ${f2(s.price)}`)), svg, tip);
 }
 function swatch(cls, text, line) {
   const g = sv("svg", { viewBox: "0 0 22 10", "aria-hidden": "true" });
@@ -111,32 +114,32 @@ function swatch(cls, text, line) {
 }
 function drawCharts() {
   const list = filtered().filter((s) => s.fc.length);
-  const key = el("div", { class: "key" }, swatch("pl", "Real price", 1), swatch("ml", "Reference line", 1), swatch("b50", "50% range"), swatch("b80", "80% range"));
-  const note = D.forecast && D.forecast.best === "rw" ? "The dashed line is flat because no method reliably beat “price stays the same”. Use the blue ranges." : "The dashed line is a reference, not a promise.";
+  const key = el("div", { class: "key" }, swatch("pl", "Giá thật", 1), swatch("ml", "Đường tham khảo", 1), swatch("b50", "Khoảng 50%"), swatch("b80", "Khoảng 80%"));
+  const note = D.forecast && D.forecast.best === "rw" ? "Đường nét đứt nằm ngang vì chưa cách nào thắng chắc chắn “giá không đổi”. Hãy dùng khoảng màu xanh." : "Đường nét đứt chỉ để tham khảo.";
   const rows = list.map((s) => row([s.sym, f2(s.price), ...s.fc.map((p) => `${f2(p.lo80)} – ${f2(p.hi80)}`)]));
-  $("charts").replaceChildren(el("p", { class: "muted" }, note), key, list.length ? el("div", { class: "grid" }, ...list.map(chart)) : el("p", {}, "No forecast available."),
-    table(["80% range", "Price", "Day +1", "Day +2", "Day +3", "Day +4", "Day +5"], rows));
+  $("charts").replaceChildren(el("p", { class: "muted" }, note), key, list.length ? el("div", { class: "grid" }, ...list.map(chart)) : el("p", {}, "Chưa có dự báo."),
+    table(["Khoảng 80%", "Giá", "Phiên +1", "Phiên +2", "Phiên +3", "Phiên +4", "Phiên +5"], rows));
 }
 function drawAcc() {
-  const names = { 5: "Short (1 week)", 20: "Middle (1 month)", 60: "Long (3 months)" };
+  const names = { 5: "Ngắn (1 tuần)", 20: "Vừa (1 tháng)", 60: "Dài (3 tháng)" };
   const rows = Object.entries(D.accuracy).map(([h, a]) => { const t = a.test; const skill = t.ic_t >= 1.65;
-    return row([names[h] || h, pc(t.beat_top), pc(t.beat_all), pc(t.up_top), pc(t.up_all), `${pc(t.net_yr, 1)} (${pc(t.net_lo, 1)} to ${pc(t.net_hi, 1)})`,
-      skill && t.net_t >= 1.65 ? "Skill, and profit after fees" : skill ? "Small skill, profit not proven" : "No skill found"]); });
-  const v = D.live || {}, kids = [el("h2", {}, "Steady picks, live"), el("p", {}, D.steady ? `Saved sessions: ${D.steady.logged}. Scored after 20 sessions: ${D.steady.skill.days}. Saved late: ${D.steady.late}. Ranking skill (IC): ${D.steady.skill.ic == null ? "none scored yet" : D.steady.skill.ic.toFixed(3) + " (" + tv(D.steady.skill.t) + ")"}.` : "Not ready yet."),
-    el("p", { class: "muted" }, "Past test at 20 sessions: IC 0.110 in 2018–2022 (t = 5.4) and 0.035 in 2023–2026 (t = 1.5, could be luck). IC 0 is guessing."),
-    el("h2", {}, "Daily ranking (31 stocks), tested on 2023 onwards"), el("p", { class: "muted" }, "These numbers are slightly too good: two inputs contain a small leak from later stock splits and dividends."),
-    table(["Time frame", "Top picks beat middle stock", "Random picks", "Top picks that rose", "All stocks that rose", "Yearly return vs equal holding, after fees", "Verdict"], rows)];
-  if (D.forecast) kids.push(el("p", {}, "5-day forecast: the 80% range held the real price " + Object.entries(D.forecast.cover).map(([h, c]) => `${pc(c)} (day +${h})`).join(", ") + " over the last 500 sessions."));
-  kids.push(el("h2", {}, "Daily ranking, live results"), el("p", {}, `Scored sessions: ${v.days || 0}. Waiting: ${v.pending || 0}. Excluded because saved late: ${v.late || 0}.`));
+    return row([names[h] || h, pc(t.beat_top), pc(t.beat_all), pc(t.up_top), pc(t.up_all), `${pc(t.net_yr, 1)} (${pc(t.net_lo, 1)} đến ${pc(t.net_hi, 1)})`,
+      skill && t.net_t >= 1.65 ? "Có kỹ năng và có lời sau phí" : skill ? "Kỹ năng nhỏ, chưa chứng minh có lời" : "Không thấy kỹ năng"]); });
+  const v = D.live || {}, kids = [el("h2", {}, "Danh sách ổn định, kết quả thật"), el("p", {}, D.steady ? `Số phiên đã lưu: ${D.steady.logged}. Đã chấm sau 20 phiên: ${D.steady.skill.days}. Lưu trễ: ${D.steady.late}. Kỹ năng xếp hạng (IC): ${D.steady.skill.ic == null ? "chưa chấm được phiên nào" : D.steady.skill.ic.toFixed(3) + " (" + tv(D.steady.skill.t) + ")"}.` : "Chưa có."),
+    el("p", { class: "muted" }, "Kiểm định quá khứ ở 20 phiên (đến 23/11/2026): IC 0.110 trong 2018–2022 (t = 5.4) và 0.035 trong 2023–2026 (t = 1.5, có thể do may rủi). IC bằng 0 là đoán mò."),
+    el("h2", {}, "Xếp hạng hằng ngày (31 mã), kiểm định từ 2023 đến nay"), el("p", { class: "muted" }, `${D.tested ? `Kiểm định lại với giá đến ${D.tested}. ` : ""}Tự kiểm định lại mỗi khi có phiên mới. Số liệu hơi đẹp hơn thực tế: hai đầu vào bị lẫn chút thông tin chia tách, cổ tức về sau.`),
+    table(["Kỳ hạn", "Mã đầu bảng thắng mã ở giữa", "Chọn ngẫu nhiên", "Mã đầu bảng tăng giá", "Mọi mã tăng giá", "Mỗi năm so với mua đều, sau phí", "Kết luận"], rows)];
+  if (D.forecast) kids.push(el("p", {}, "Dự báo 5 phiên: khoảng 80% chứa giá thật " + Object.entries(D.forecast.cover).map(([h, c]) => `${pc(c)} (phiên +${h})`).join(", ") + " trong 500 phiên gần nhất."));
+  kids.push(el("h2", {}, "Xếp hạng hằng ngày, kết quả thật"), el("p", {}, `Đã chấm: ${v.days || 0} phiên. Đang chờ: ${v.pending || 0}. Bỏ vì lưu trễ: ${v.late || 0}.`));
   if (v.days) {
-    kids.push(table(["Measure", "Result", "Good result"], [
-      row(["Ranking skill (IC)", `${v.rank_ic.toFixed(3)} (${tv(v.ic_t)})`, "above 0, t ≥ 1.65"]),
-      row(["Top picks after fees, total", `${pc(v.net_total, 1)} over ${v.periods} periods (${tv(v.net_t)})`, "above 0%, t ≥ 1.65"]),
-      row(["80% range held the price", pc(v.coverage80), "about 80%"]),
-      row(["Take profit reached / stop reached", `${pc(v.hit_target)} / ${pc(v.hit_stop)}`, "about 25% / at most 10%"]),
-      ...(v.learn_days ? [row(["Daily learning vs frozen copy (IC)", `${v.ic_learn.toFixed(3)} vs ${v.ic_frozen.toFixed(3)} (${tv(v.learn_t)})`, "learning higher"])] : [])]));
+    kids.push(table(["Chỉ số", "Kết quả", "Mức tốt"], [
+      row(["Kỹ năng xếp hạng (IC)", `${v.rank_ic.toFixed(3)} (${tv(v.ic_t)})`, "trên 0, t ≥ 1.65"]),
+      row(["Mã đầu bảng sau phí so với mua đều, cộng dồn", `${pc(v.net_total, 1)} qua ${v.periods} kỳ (${tv(v.net_t)})`, "trên 0%, t ≥ 1.65"]),
+      row(["Khoảng 80% chứa giá thật", pc(v.coverage80), "khoảng 80%"]),
+      row(["Chạm chốt lời / chạm cắt lỗ", `${pc(v.hit_target)} / ${pc(v.hit_stop)}`, "khoảng 25% / nhiều nhất 10%"]),
+      ...(v.learn_days ? [row(["Học hằng ngày so với bản đóng băng (IC)", `${v.ic_learn.toFixed(3)} so với ${v.ic_frozen.toFixed(3)} (${tv(v.learn_t)})`, "học cao hơn"])] : [])]));
   }
-  kids.push(el("p", { class: "muted" }, (v.days || 0) < 60 ? "Too early to judge: wait for at least 60 scored sessions." : "At least 60 sessions scored."));
+  kids.push(el("p", { class: "muted" }, (v.days || 0) < 60 ? "Còn quá sớm để kết luận, cần ít nhất 60 phiên đã chấm." : "Đã chấm ít nhất 60 phiên."));
   $("acc").replaceChildren(...kids);
 }
 function draw() { if (!D) return; drawPlan(); drawRank(); drawCharts(); drawAcc(); }
@@ -147,12 +150,12 @@ function go(t) {
 }
 async function load() {
   const r = await fetch("site.json?t=" + Date.now(), { cache: "no-store" });
-  if (!r.ok) throw new Error("no data file (" + r.status + ")");
+  if (!r.ok) throw new Error("không có tệp dữ liệu (" + r.status + ")");
   D = await r.json();
-  $("meta").textContent = `Prices to ${D.asof} close · updated ${D.updated} Vietnam time · thousands of VND`;
-  $("verdict").textContent = D.gate ? "The backtest passed the profit test, so Buy signals can appear. Not investment advice."
-    : "Buy signals are locked: profit after fees is not proven. Use the ranking to learn, not to trade real money. Not investment advice.";
-  const sel = $("sector"), cur = sel.value; sel.replaceChildren(el("option", { value: "" }, "All sectors"), ...[...new Set(D.stocks.map((s) => s.sector))].map((s) => el("option", { value: s }, SECT[s] || s))); sel.value = cur;
+  $("meta").textContent = `Giá đóng cửa đến ${D.asof} · cập nhật ${D.updated} giờ Việt Nam · nghìn đồng` + (D.warnings && D.warnings.length ? ` · ${D.warnings.length} cảnh báo: ${D.warnings.join("; ")}` : "");
+  $("verdict").textContent = D.gate ? "Xếp hạng hằng ngày đạt kiểm định lợi nhuận nên tín hiệu Mua có thể hiện. Danh sách ổn định vẫn chỉ trên giấy. Không phải lời khuyên đầu tư."
+    : "Tín hiệu Mua đang khoá vì chưa chứng minh có lời sau phí. Hãy dùng để học, đừng giao dịch tiền thật. Không phải lời khuyên đầu tư.";
+  const sel = $("sector"), cur = sel.value; sel.replaceChildren(el("option", { value: "" }, "Mọi ngành"), ...[...new Set(D.stocks.map((s) => s.sector))].map((s) => el("option", { value: s }, SECT[s] || s))); sel.value = cur;
   draw();
 }
 async function api(path, opt = {}) {
@@ -160,35 +163,35 @@ async function api(path, opt = {}) {
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 async function update() {
-  if (!onPages) return say("This button works on the github.io page.");
+  if (!onPages) return say("Nút này chỉ hoạt động trên trang github.io.");
   if (!store.get()) {
     window.open(`https://github.com/${OWNER}/${REPO}/actions/workflows/${WORKFLOW}`, "_blank", "noopener");
-    return say("GitHub opened in a new tab: press Run workflow there, wait 3 to 10 minutes, then reload this page. For one click, see Button settings.");
+    return say("GitHub đã mở ở thẻ mới: bấm Run workflow, chờ 5 đến 15 phút rồi tải lại trang này. Muốn chỉ bấm một lần, xem Cài đặt nút.");
   }
   const btn = $("update"); btn.disabled = true;
   try {
     const t0 = Date.now() - 60000, before = D && D.updated;
     const r = await api(`actions/workflows/${WORKFLOW}/dispatches`, { method: "POST", body: JSON.stringify({ ref: "main" }) });
-    if (r.status === 401) { store.del(); throw new Error("the key is wrong or expired and was removed. Add a new one in Button settings."); }
-    if (r.status === 403 || r.status === 404) throw new Error("the key lacks permission. It needs Actions: Read and write on this repository.");
-    if (!r.ok) throw new Error("GitHub answered " + r.status);
-    say("Update started. This takes about 3 to 10 minutes; you can keep reading.");
+    if (r.status === 401) { store.del(); throw new Error("khoá sai hoặc hết hạn nên đã bị xoá. Hãy thêm khoá mới trong Cài đặt nút."); }
+    if (r.status === 403 || r.status === 404) throw new Error("khoá thiếu quyền. Cần Actions: Read and write trên kho này.");
+    if (!r.ok) throw new Error("GitHub trả lời " + r.status);
+    say("Đã bắt đầu cập nhật, mất khoảng 5 đến 15 phút. Bạn cứ xem tiếp.");
     for (let i = 0; i < 90; i++) {
       await wait(15000);
       const q = await api(`actions/workflows/${WORKFLOW}/runs?event=workflow_dispatch&per_page=5`); if (!q.ok) continue;
       const run = (await q.json()).workflow_runs.find((x) => Date.parse(x.created_at) >= t0); if (!run) continue;
-      if (run.status !== "completed") { say(`Updating… (${Math.round((Date.now() - Date.parse(run.created_at)) / 60000)} min)`); continue; }
-      if (run.conclusion !== "success") throw new Error("the run ended with: " + run.conclusion + ". Old results are still shown.");
-      for (let k = 0; k < 12; k++) { await load(); if (D.updated !== before) return say("Done. Showing new results."); await wait(10000); }
-      return say("The run finished. Reload in a few minutes if the date above has not changed.");
+      if (run.status !== "completed") { say(`Đang cập nhật… (${Math.round((Date.now() - Date.parse(run.created_at)) / 60000)} phút)`); continue; }
+      if (run.conclusion !== "success") throw new Error("lần chạy kết thúc với: " + run.conclusion + ". Trang vẫn hiện kết quả cũ.");
+      for (let k = 0; k < 12; k++) { await load(); if (D.updated !== before) return say("Xong. Đang hiện kết quả mới."); await wait(10000); }
+      return say("Đã chạy xong. Nếu ngày ở trên chưa đổi, hãy tải lại sau vài phút.");
     }
-    say("Still running. Reload this page later.");
-  } catch (e) { say("Update failed: " + e.message); } finally { btn.disabled = false; }
+    say("Vẫn đang chạy. Hãy tải lại trang sau.");
+  } catch (e) { say("Cập nhật lỗi: " + e.message); } finally { btn.disabled = false; }
 }
 $("update").addEventListener("click", update);
 $("setup").addEventListener("click", () => { $("panel").hidden = !$("panel").hidden; });
-$("save").addEventListener("click", () => { const v = $("token").value.trim(); if (!v) return; store.set(v, $("remember").checked); $("token").value = ""; $("panel").hidden = true; say("Key saved. Update now works with one click."); });
-$("forget").addEventListener("click", () => { store.del(); say("Key removed from this browser."); });
+$("save").addEventListener("click", () => { const v = $("token").value.trim(); if (!v) return; store.set(v, $("remember").checked); $("token").value = ""; $("panel").hidden = true; say("Đã lưu khoá. Giờ chỉ cần bấm Cập nhật ngay."); });
+$("forget").addEventListener("click", () => { store.del(); say("Đã xoá khoá khỏi trình duyệt này."); });
 for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => { if (b.dataset.tab !== tab) $("q").value = ""; go(b.dataset.tab); });
 const fmt = () => { const m = money(); $("money").value = m ? m.toLocaleString("vi-VN") : ""; };
 try { $("money").value = localStorage.getItem("vnsa-money") || "10000000"; } catch { $("money").value = "10000000"; }
@@ -196,5 +199,5 @@ fmt();
 $("money").addEventListener("input", () => { fmt(); try { localStorage.setItem("vnsa-money", String(money())); } catch { } if (D) drawPlan(); });
 $("q").addEventListener("input", draw); $("sector").addEventListener("change", draw);
 if (onPages) $("repo").href = `https://github.com/${OWNER}/${REPO}`;
-load().catch((e) => { $("meta").textContent = "Could not load results: " + e.message; });
+load().catch((e) => { $("meta").textContent = "Không tải được kết quả: " + e.message; });
 go(["plan", "rank", "charts", "acc", "help"].find((t) => location.hash === "#" + t) || "plan");

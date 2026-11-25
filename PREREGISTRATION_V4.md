@@ -12,3 +12,5 @@ Written 25 November 2026 before running. Already known: V3 results, and that on 
 **Reported:** walk-forward return, worst fall, t against the E1VFVN30 fund and equal weight in 2020-26 and 2023-26; PBO; reality check over the whole grid.
 
 **What goes live:** procedure C's pick on all data to 23 November 2026, if C's walk-forward return in 2023-26 is above the V3 model's 14% a year. Otherwise V3 stays. It stays paper only unless walk-forward 2023-26 beats both benchmarks with t >= 1.65.
+
+**Correction, recorded before the rerun:** the first run averaged start days 5 sessions apart, so the 5-session step had a single start day, and its pick's result (27% a year in 2023-26) was partly that day's luck (14-22% on the other four). Every setting is now averaged over five evenly spaced start days. Same grid, procedures and adoption rule; the rerun replaces the first run.

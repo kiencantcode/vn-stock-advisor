@@ -28,16 +28,23 @@ def _signature(cfg: dict, syms: list[str]) -> str:
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
+def keep_old(old: dict, asof, cfg: dict) -> bool:
+    """Trên GitHub: kiểm định lại mỗi khi có phiên mới. Trên máy: mỗi max_age_days ngày."""
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        return old.get("asof") == str(asof)
+    return (datetime.now() - datetime.fromisoformat(old["run_at"])).days <= cfg["validation"]["max_age_days"]
+
+
 def get_validation(x, core, cfg, outdir, force=False) -> dict:
+    asof = x["date"].max().date()
     path, sig = os.path.join(outdir, "validation.json"), _signature(cfg, list(x["sym"].unique()))
     if not force and os.path.exists(path):
         with open(path, encoding="utf-8") as f:
             old = json.load(f)
-        age = (datetime.now() - datetime.fromisoformat(old["run_at"])).days
-        if old["sig"] == sig and age <= cfg["validation"]["max_age_days"]:
+        if old["sig"] == sig and keep_old(old, asof, cfg):
             return old
     print("Đang kiểm định walk-forward (vài phút)...", flush=True)
-    res = {**model.validate(x, core, cfg), "sig": sig, "run_at": datetime.now().isoformat(timespec="seconds")}
+    res = {**model.validate(x, core, cfg), "sig": sig, "asof": str(asof), "run_at": datetime.now().isoformat(timespec="seconds")}
     os.makedirs(outdir, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(res, f, ensure_ascii=False, indent=1)
@@ -81,7 +88,8 @@ def run(cfg: dict, provider: str | None = None, only_sector: str | None = None,
              **levels.make_levels(r, conf, i + 1, len(now), H, val["gate"])} for i, r in now.iterrows()]
     df = pd.DataFrame(rows)
     live = None
-    acc = accuracy.build(frames, index, core, cfg, outdir_for(provider), force_accuracy)
+    acc = accuracy.build(frames, index, core, cfg, outdir_for(provider), force_accuracy,
+                         lambda old: keep_old(old, x["date"].max().date(), cfg), x["date"].max().date())
     tr = model.trainable(x)
     learned = f"Mô hình lần này học từ {len(tr):,} mẫu, kết quả mới nhất đã biết: phiên {tr['date'].max().date()}"
     if provider != "synthetic":

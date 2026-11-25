@@ -43,13 +43,12 @@ def verdict(s: dict) -> str:
     return "KHÔNG có bằng chứng kỹ năng, không nên dùng"
 
 
-def build(frames, index, core, cfg, outdir, force=False) -> dict:
+def build(frames, index, core, cfg, outdir, force=False, keep=lambda old: True, asof=None) -> dict:
     path, mid = os.path.join(outdir, "accuracy.json"), track.model_id(cfg)
     if not force and os.path.exists(path):
         with open(path, encoding="utf-8") as f:
             old = json.load(f)
-        age = (datetime.now() - datetime.fromisoformat(old["run_at"])).days
-        if old["model_id"] == mid and age <= cfg["validation"]["max_age_days"]:
+        if old["model_id"] == mid and keep(old):
             return old
     cut, res = pd.Timestamp(cfg["validation"]["holdout"]), {}
     for H, name in HORIZONS.items():
@@ -61,7 +60,7 @@ def build(frames, index, core, cfg, outdir, force=False) -> dict:
         res[str(H)] = {"name": name, "dev": _stats(oos[oos["date"] < cut], H, cfg), "test": _stats(test, H, cfg)}
         res[str(H)]["years"] = {str(y): _stats(g, H, cfg) for y, g in test.groupby(test["date"].dt.year)}
         res[str(H)]["verdict"] = verdict(res[str(H)]["test"])
-    out = {"model_id": mid, "run_at": datetime.now().isoformat(timespec="seconds"),
+    out = {"model_id": mid, "asof": str(asof), "run_at": datetime.now().isoformat(timespec="seconds"),
            "holdout": str(cut.date()), "horizons": res}
     os.makedirs(outdir, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:

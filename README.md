@@ -77,6 +77,6 @@ Mỗi lần `python run.py` tạo `output/forecast.html`: biểu đồ và dải
 
 ## Danh sách ổn định (giữ từ 1 tuần trở lên, trên giấy)
 
-- Trang web, mục **Steady picks**; mã nguồn `advisor/steady.py`, dữ liệu `advisor/vnd.py`. Xem lại mỗi 20 phiên, giữ 10 mã. Kết quả và giới hạn: `STEADY_REPORT.md`.
+- Trang web, mục **Steady picks**; mã nguồn `advisor/steady.py`, dữ liệu `advisor/vnd.py`. Xem lại mỗi 5 phiên, giữ 6 mã. Kết quả và giới hạn: `STEADY_REPORT.md`.
 - Nhật ký chỉ ghi thêm: `output/history/steady_rankings.csv`. Học lại vào 1/1 và 1/7.
 - Lần chạy đầu tải toàn bộ lịch sử từ VNDirect (2-3 phút).

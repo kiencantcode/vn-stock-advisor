@@ -8,7 +8,7 @@ EXI = {"none": (0, 0, 0), **{f"s{int(x*100)}": (x, 0, 0) for x in (.07, .1, .15,
 R, NT, DEAD = L.R, L.NT, L.dead
 def sim(O, N, STEP, ent, ex_, cost=.004):
     sl, tp, tr = ex_; hc = cost / 2; res = np.zeros(L.n - L.i0); no = 0; dp = {"dip2": .02, "dip5": .05}.get(ent)
-    for off in range(0, STEP, 5):
+    for off in range(0, STEP, STEP // 5):
         no += 1; w = {}; en = {}; pk = {}; born = {}; cash = 1.; todo = None; ex = set(); lim = {}; out = np.zeros(L.n - L.i0)
         for i in range(L.i0 + off, L.n):
             Ri = R[i]; v0 = cash

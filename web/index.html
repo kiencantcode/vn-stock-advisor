@@ -1,46 +1,51 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>VN Stock Advisor</title><link rel="icon" href="data:,"><link rel="stylesheet" href="style.css"></head>
 <body>
-<header><div><h1>VN Stock Advisor</h1><p id="meta" class="muted">Loading…</p></div>
-<div class="actions"><button id="update" class="primary">Update now</button><button id="setup">Button settings</button></div></header>
+<header><div><h1>VN Stock Advisor</h1><p id="meta" class="muted">Đang tải…</p></div>
+<div class="actions"><button id="update" class="primary">Cập nhật ngay</button><button id="setup">Cài đặt nút</button></div></header>
 <p id="status" class="status" role="status" hidden></p>
 <section id="panel" class="card" hidden>
-<h2>Button settings</h2>
-<p>Without a key, <b>Update now</b> opens GitHub, where you press <b>Run workflow</b>. To update with one click, add a GitHub key (only the repository owner can do this):</p>
-<ol><li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub: new fine-grained token</a>.</li>
-<li>Choose an expiry date. Under Repository access, pick <b>Only select repositories</b> and choose only this repository.</li>
-<li>Under Permissions, set <b>Actions</b> to <b>Read and write</b>. Leave everything else alone.</li>
-<li>Generate it, copy it, and paste it here.</li></ol>
-<p class="muted">The key stays in this browser and is sent only to GitHub. Never use a key with other permissions, and don't do this on a shared computer. Other pages under the same github.io address could read a remembered key.</p>
-<div class="row"><input id="token" type="password" autocomplete="off" placeholder="github_pat_…" aria-label="GitHub key">
-<label><input id="remember" type="checkbox"> Remember on this device</label>
-<button id="save" class="primary">Save</button><button id="forget">Remove key</button></div></section>
+<h2>Cài đặt nút cập nhật</h2>
+<p>Nếu chưa có khoá, <b>Cập nhật ngay</b> sẽ mở GitHub để bạn bấm <b>Run workflow</b>. Muốn chỉ bấm một lần, hãy thêm khoá GitHub (chỉ chủ kho mã làm được):</p>
+<ol><li>Mở <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub: tạo khoá mới</a>.</li>
+<li>Chọn ngày hết hạn. Ở Repository access, chọn <b>Only select repositories</b> và chỉ chọn kho này.</li>
+<li>Ở Permissions, đặt <b>Actions</b> thành <b>Read and write</b>. Các mục khác để nguyên.</li>
+<li>Tạo khoá, sao chép rồi dán vào đây.</li></ol>
+<p class="muted">Khoá chỉ nằm trong trình duyệt này và chỉ gửi tới GitHub. Đừng dùng khoá có quyền khác, và đừng làm trên máy dùng chung. Trang khác cùng địa chỉ github.io có thể đọc khoá đã ghi nhớ.</p>
+<div class="row"><input id="token" type="password" autocomplete="off" placeholder="github_pat_…" aria-label="Khoá GitHub">
+<label><input id="remember" type="checkbox"> Ghi nhớ trên máy này</label>
+<button id="save" class="primary">Lưu</button><button id="forget">Xoá khoá</button></div></section>
 <p id="verdict" class="notice"></p>
-<nav role="tablist"><button data-tab="plan" class="on">Steady picks</button><button data-tab="rank">Daily ranking</button><button data-tab="charts">5-day forecast</button><button data-tab="acc">Accuracy</button><button data-tab="help">Help</button></nav>
-<div class="row filters" id="filters"><input id="q" type="search" placeholder="Search stock" aria-label="Search stock">
-<select id="sector" aria-label="Sector"><option value="">All sectors</option></select></div>
-<section id="plan"><div class="card row"><label for="money"><b>Paper money</b></label><input id="money" inputmode="numeric" autocomplete="off" maxlength="18"><span>VND</span><span class="muted">Saved only in this browser.</span></div><div id="planout"></div></section><section id="rank" hidden></section><section id="charts" hidden></section><section id="acc" hidden></section>
+<nav role="tablist"><button data-tab="plan" class="on">Danh sách ổn định</button><button data-tab="rank">Xếp hạng hằng ngày</button><button data-tab="charts">Dự báo 5 phiên</button><button data-tab="acc">Độ chính xác</button><button data-tab="help">Hướng dẫn</button></nav>
+<div class="row filters" id="filters"><input id="q" type="search" placeholder="Tìm mã" aria-label="Tìm mã">
+<select id="sector" aria-label="Ngành"><option value="">Mọi ngành</option></select></div>
+<section id="plan"><div class="card row"><label for="money"><b>Tiền giả định</b></label><input id="money" inputmode="numeric" autocomplete="off" maxlength="18"><span>VND</span><span class="muted">Chỉ lưu trong trình duyệt này.</span></div><div id="planout"></div></section><section id="rank" hidden></section><section id="charts" hidden></section><section id="acc" hidden></section>
 <section id="help" hidden class="card">
-<h2>How to use this page</h2>
-<ol><li>It updates by itself after the market closes, around 16:30 Vietnam time, Monday to Friday. GitHub can start late.</li>
-<li>Press <b>Update now</b> to update sooner. It takes about 3 to 10 minutes. Press it after 15:00 to include today's close.</li>
-<li>Click a row in Ranking to see that stock's chart.</li></ol>
-<h3>Words: Steady picks</h3><dl>
-<dt>Which list should I follow?</dt><dd>Steady picks, on paper. The Daily ranking is about 5 days and changes a lot from day to day.</dd>
-<dt>Paper rules</dt><dd>Every 20 sessions: hold 10 stocks in equal parts, sell one only if it falls below rank 30, trade at the next session's close, 0.4% cost for a buy and sell, no buying near the ceiling price or selling near the floor price. Between those days, do nothing.</dd>
-<dt>Steady rank</dt><dd>The average of the model's last 20 daily ranks over about 100 of the most traded HOSE stocks. It aims at about the next month.</dd>
-<dt>E1VFVN30</dt><dd>A fund you buy like a stock. It follows the 30 biggest stocks on HOSE.</dd>
-<dt>Odd lot</dt><dd>Fewer than 100 shares. Your broker must support odd-lot orders.</dd></dl>
-<h3>Words: Daily ranking and 5-day forecast</h3><dl>
-<dt>80% range</dt><dd>The close should land here about 8 times in 10. It can be up or down.</dd>
-<dt>Buy zone</dt><dd>About half the time, the price dips to the lower number within 5 sessions.</dd>
-<dt>Take profit</dt><dd>Reached about 1 time in 4.</dd><dt>Stop loss</dt><dd>Reached at most about 1 time in 10.</dd>
-<dt>High rank</dt><dd>Top 20%. Perhaps better than the other stocks, not "will go up". Neighbouring ranks mean little: small calculation differences can swap them.</dd>
-<dt>High risk</dt><dd>Three or more days down over 6% in the last 20 sessions.</dd>
-<dt>Paused</dt><dd>Live results show the ranking is going wrong.</dd></dl>
-<p>Prices are in thousands of VND. These levels have not been tested as a trading plan. Not investment advice.</p></section>
-<footer class="muted"><a href="report.html">Vietnamese report</a> · <a href="forecast.html">Vietnamese charts</a> · <a href="GUIDE.pdf">Guide (PDF)</a> · <a id="repo" href="#">Source code</a></footer>
+<h2>Cách dùng trang này</h2>
+<ol><li>Trang tự cập nhật sau mỗi phiên giao dịch, thường từ 16 giờ. Nếu GitHub trễ, có thêm các lần chạy dự phòng buổi tối và sáng sớm hôm sau.</li>
+<li>Mỗi lần có phiên mới, máy tải giá mới, học lại xếp hạng hằng ngày và kiểm định lại. Mô hình của Danh sách ổn định học lại vào 1/1 và 1/7, đúng như lúc kiểm định, để danh sách không nhảy.</li>
+<li>Muốn cập nhật sớm, bấm <b>Cập nhật ngay</b> sau 15 giờ 20. Mất khoảng 5 đến 15 phút.</li>
+<li>Bấm vào một dòng trong Xếp hạng hằng ngày để xem biểu đồ.</li></ol>
+<h3>Danh sách ổn định</h3><dl>
+<dt>Nên theo danh sách nào?</dt><dd>Danh sách ổn định, và chỉ theo dõi trên giấy. Xếp hạng hằng ngày chỉ nhìn khoảng 5 phiên và thay đổi nhiều mỗi ngày.</dd>
+<dt>Mua giá nào?</dt><dd>Phiên sau ngày xem lại, đặt lệnh ở <b>Giá đặt mua</b> (giá đóng cửa gần nhất). Khi kiểm tra, lệnh khớp khoảng 91% số lần. Chưa khớp thì mua ở giá đóng cửa phiên đó. Mã gần giá trần thì bỏ qua. Danh mục giả trên trang cũng tính đúng như vậy.</dd>
+<dt>Khi nào bán?</dt><dd>Cứ 5 phiên (1 tuần) xem lại một lần, bán ở giá đóng cửa mã nào rớt khỏi hạng 18. Còn trong hạng 18 thì giữ, dù lãi hay lỗ. Không bán khi giá gần sàn. Phí giả định 0,4% cho một lần mua và bán.</dd>
+<dt>Vì sao không có giá cắt lỗ, chốt lời?</dt><dd>Đã thử 14 cách bán với 5 cách mua và 240 mô hình (16.800 trường hợp). Với mô hình này, bán theo hạng được chọn; cắt lỗ khi giảm 10% từ đỉnh giảm bớt mức lỗ nặng nhất (54% thay vì 60%) nhưng lợi nhuận thấp hơn.</dd>
+<dt>Khoảng 20 phiên</dt><dd>Giá đóng cửa sau 20 phiên (tính từ giá hiện tại) nằm trong khoảng này khoảng 8 trên 10 lần. Trong 2023–2026 là 79%. Đây không phải giá mục tiêu.</dd>
+<dt>Giá đã mua</dt><dd>Giá mua giả trung bình, đã quy theo chia tách và cổ tức nên có thể khác giá niêm yết hôm đó. Lãi/lỗ của từng mã chưa trừ phí.</dd>
+<dt>Hạng ổn định</dt><dd>Trung bình hạng 20 phiên gần nhất trong khoảng 100 mã HOSE giao dịch nhiều nhất, nhắm tới khoảng 1 tháng tới.</dd>
+<dt>E1VFVN30</dt><dd>Quỹ mua bán như cổ phiếu, gồm 30 công ty lớn trên sàn HOSE.</dd>
+<dt>Lô lẻ</dt><dd>Dưới 100 cổ phiếu. Công ty chứng khoán của bạn phải hỗ trợ lệnh lô lẻ.</dd></dl>
+<h3>Xếp hạng hằng ngày và dự báo 5 phiên</h3><dl>
+<dt>Khoảng 80%</dt><dd>Giá đóng cửa nằm trong khoảng này khoảng 8 trên 10 lần. Có thể tăng hoặc giảm.</dd>
+<dt>Giá đặt mua</dt><dd>Giá đóng cửa gần nhất, hiệu lực 3 phiên. Khớp khoảng 93% số lần. Đặt thấp hơn 2% chỉ khớp khoảng 4 trên 10 lần và kết quả không tốt hơn ở cả hai giai đoạn.</dd>
+<dt>Chốt lời</dt><dd>Khoảng 1 trên 4 lần giá chạm tới.</dd><dt>Cắt lỗ</dt><dd>Nhiều nhất khoảng 1 trên 10 lần giá chạm tới.</dd>
+<dt>Hạng cao</dt><dd>Nhóm 20% đầu. Có thể tốt hơn các mã khác, không có nghĩa là sẽ tăng. Các hạng sát nhau gần như không khác gì.</dd>
+<dt>Rủi ro cao</dt><dd>Có từ ba phiên giảm trên 6% trong 20 phiên gần nhất.</dd>
+<dt>Tạm dừng</dt><dd>Kết quả thật cho thấy xếp hạng đang sai.</dd></dl>
+<p>Giá tính bằng nghìn đồng. Giá đặt mua đã được thử nhưng chưa có lời sau phí. Chốt lời và cắt lỗ 5 phiên chưa được kiểm định thành chiến lược, đừng dùng cho Danh sách ổn định. Không phải lời khuyên đầu tư.</p></section>
+<footer class="muted"><a href="report.html">Báo cáo</a> · <a href="forecast.html">Biểu đồ</a> · <a href="GUIDE.pdf">Hướng dẫn PDF (tiếng Anh, bản cũ)</a> · <a id="repo" href="#">Mã nguồn</a></footer>
 <script src="app.js"></script></body></html>
