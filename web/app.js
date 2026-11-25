@@ -8,7 +8,7 @@ const SIG = { "MUA": ["Buy", "up"], "HANG CAO": ["High rank", "up"], "TRUNG LAP"
   "RUI RO CAO": ["High risk", "down"], "TAM DUNG": ["Paused", "down"] };
 const SECT = { "Ngan hang": "Banks", "Thep": "Steel", "Bat dong san": "Real estate", "Chung khoan": "Brokers", "Cong nghe": "Technology",
   "Tieu dung": "Consumer", "Dau khi": "Oil & gas", "Dien nuoc": "Utilities" };
-let D = null, tab = "rank";
+let D = null, tab = "plan";
 
 function el(tag, attrs = {}, ...kids) {  // text only: never inserts HTML
   const e = document.createElement(tag);
@@ -38,6 +38,38 @@ function filtered() {
   const q = $("q").value.trim().toUpperCase(), s = $("sector").value;
   return D.stocks.filter((x) => (!q || x.sym.includes(q)) && (!s || x.sector === s));
 }
+const money = () => Number($("money").value.replace(/\D/g, "")) || 0;
+const vnd = (v) => Math.round(v).toLocaleString("vi-VN") + " VND";
+const list = (a) => a.length ? a.join(", ") : "none";
+function drawPlan() {
+  const m = money(), s = D.steady, out = [];
+  if (!s) return $("planout").replaceChildren(el("p", { class: "notice" }, "This list appears after the next update."));
+  const px = Object.fromEntries(s.rows.map((r) => [r.sym, r]));
+  const line = (sym, w, what) => { const r = px[sym], a = m * w, n = r ? Math.floor(a / (r.price * 1000)) : null;
+    return row([sym, what, r ? String(r.rank) : "over 100", r ? f2(r.price) : "–", pc(w), vnd(a), n == null ? "–" : n.toLocaleString("vi-VN") + (n > 0 && n < 100 ? " (odd lot)" : "")], 2); };
+  const head = ["Stock", "Paper action", "Steady rank", "Price (thousand VND)", "Part", "Amount", "Shares"];
+  if (s.pending) {
+    const q = s.pending, all = [...q.keep, ...q.buy];
+    out.push(el("p", { class: "notice" }, `Review day. At the next session's close, buy on paper: ${list(q.buy)}. Sell: ${list(q.sell)}. Keep: ${list(q.keep)}. Then nothing to do for 20 sessions.`),
+      table(head, all.map((x) => line(x, 1 / Math.max(10, all.length), q.buy.includes(x) ? "Buy next session" : "Keep")), 2));
+  } else if (Object.keys(s.hold).length) {
+    out.push(el("p", { class: "notice" }, `Nothing to do. ${s.next_in} session(s) until the next review day.`),
+      table(head, Object.entries(s.hold).sort((a, b) => b[1] - a[1]).map(([x, w]) => line(x, w, "Hold")), 2));
+  }
+  out.push(el("p", { class: "muted" }, `From the ${s.asof} close. Paper only, not investment advice.`));
+  if (s.trades.length) out.push(el("h3", {}, "Last paper trades"), table(["Date", "Bought", "Sold"], s.trades.slice().reverse().map((t) => row([t.date, list(t.buy), list(t.sell)], 3)), 3));
+  out.push(el("h2", {}, "Live result (the only clean test)"));
+  if (s.live) out.push(el("p", {}, `Since ${s.live.start}: ${s.live.sessions} session(s).` + (s.live.sessions < 120 ? " Too early to judge: wait for about 120 sessions (6 months)." : "")),
+    table(["", "Change", "Your paper money"], [["Steady picks, after costs", s.live.model], ["E1VFVN30 index fund", s.live.fund]].map(([n, v]) => row([n, pc(v - 1, 1), vnd(m * v)]))));
+  else out.push(el("p", {}, "Starts with the first paper trade."));
+  out.push(el("h2", {}, "Past test, after costs"), table(["Plan", "2018–2022 (used to choose), per year", "2023–2026 (check), per year", "Worst fall 2018–2026"],
+    [["Steady picks", "25%", "14%", "−59%"], ["All 100 stocks equally", "4%", "12%", "−58%"], ["E1VFVN30 fund", "1%", "18%", "−48%"]].map((r) => row(r))),
+    el("p", { class: "notice" }, "Not proven. It beat everything in 2018–2022, but in 2023–2026 it only matched the 100-stock average and trailed the fund. It lost money in 2025 and 2026. Over 20 sessions its picks beat the middle stock 52% of the time in 2023–2026 (57% in 2018–2022)."));
+  const top = s.rows.slice(0, 30); const ag = (v) => v == null ? "–" : String(v);
+  out.push(el("h2", {}, "Steady ranking, top 30"), table(["Rank", "Stock", "Rank 1 week ago", "Rank 1 month ago", "Price (thousand VND)", "Last 20 sessions", "Yearly volatility", "Warning"],
+    top.map((r) => row([String(r.rank), r.sym, ag(r.ago5), ag(r.ago20), f2(r.price), pc(r.ret20, 1), pc(r.vol), r.floor20 >= 3 ? el("span", { class: "sig down" }, "High risk") : ""], 2)), 2));
+  $("planout").replaceChildren(...out);
+}
 function showStock(sym) { $("q").value = sym; go("charts"); }
 function drawRank() {
   const rows = filtered().map((s) => {
@@ -47,7 +79,7 @@ function drawRank() {
       el("span", { class: "sig " + cls }, name)], 3);
     tr.classList.add("click"); tr.addEventListener("click", () => showStock(s.sym)); return tr;
   });
-  $("rank").replaceChildren(rows.length ? table(["Rank", "Stock", "Sector", "Price", "80% range, day 5", "Buy zone", "Take profit", "Stop loss", "RSI", "Signal"], rows, 3)
+  $("rank").replaceChildren(el("p", { class: "notice" }, "5-day view. In tests about 42% of its top 6 changed every day, so it is not for week-long holding. Use Steady picks for that, on paper."), rows.length ? table(["Rank", "Stock", "Sector", "Price", "80% range, day 5", "Buy zone", "Take profit", "Stop loss", "RSI", "Signal"], rows, 3)
     : el("p", { class: "muted" }, "No stock matches."));
 }
 function chart(s) {
@@ -90,10 +122,12 @@ function drawAcc() {
   const rows = Object.entries(D.accuracy).map(([h, a]) => { const t = a.test; const skill = t.ic_t >= 1.65;
     return row([names[h] || h, pc(t.beat_top), pc(t.beat_all), pc(t.up_top), pc(t.up_all), `${pc(t.net_yr, 1)} (${pc(t.net_lo, 1)} to ${pc(t.net_hi, 1)})`,
       skill && t.net_t >= 1.65 ? "Skill, and profit after fees" : skill ? "Small skill, profit not proven" : "No skill found"]); });
-  const v = D.live || {}, kids = [el("h2", {}, "Tested on 2023 onwards"),
+  const v = D.live || {}, kids = [el("h2", {}, "Steady picks, live"), el("p", {}, D.steady ? `Saved sessions: ${D.steady.logged}. Scored after 20 sessions: ${D.steady.skill.days}. Saved late: ${D.steady.late}. Ranking skill (IC): ${D.steady.skill.ic == null ? "none scored yet" : D.steady.skill.ic.toFixed(3) + " (" + tv(D.steady.skill.t) + ")"}.` : "Not ready yet."),
+    el("p", { class: "muted" }, "Past test at 20 sessions: IC 0.110 in 2018–2022 (t = 5.4) and 0.035 in 2023–2026 (t = 1.5, could be luck). IC 0 is guessing."),
+    el("h2", {}, "Daily ranking (31 stocks), tested on 2023 onwards"), el("p", { class: "muted" }, "These numbers are slightly too good: two inputs contain a small leak from later stock splits and dividends."),
     table(["Time frame", "Top picks beat middle stock", "Random picks", "Top picks that rose", "All stocks that rose", "Yearly return vs equal holding, after fees", "Verdict"], rows)];
   if (D.forecast) kids.push(el("p", {}, "5-day forecast: the 80% range held the real price " + Object.entries(D.forecast.cover).map(([h, c]) => `${pc(c)} (day +${h})`).join(", ") + " over the last 500 sessions."));
-  kids.push(el("h2", {}, "Live results"), el("p", {}, `Scored sessions: ${v.days || 0}. Waiting: ${v.pending || 0}. Excluded because saved late: ${v.late || 0}.`));
+  kids.push(el("h2", {}, "Daily ranking, live results"), el("p", {}, `Scored sessions: ${v.days || 0}. Waiting: ${v.pending || 0}. Excluded because saved late: ${v.late || 0}.`));
   if (v.days) {
     kids.push(table(["Measure", "Result", "Good result"], [
       row(["Ranking skill (IC)", `${v.rank_ic.toFixed(3)} (${tv(v.ic_t)})`, "above 0, t ≥ 1.65"]),
@@ -105,11 +139,11 @@ function drawAcc() {
   kids.push(el("p", { class: "muted" }, (v.days || 0) < 60 ? "Too early to judge: wait for at least 60 scored sessions." : "At least 60 sessions scored."));
   $("acc").replaceChildren(...kids);
 }
-function draw() { if (!D) return; drawRank(); drawCharts(); drawAcc(); }
+function draw() { if (!D) return; drawPlan(); drawRank(); drawCharts(); drawAcc(); }
 function go(t) {
   tab = t; for (const b of document.querySelectorAll("nav button")) { b.classList.toggle("on", b.dataset.tab === t); b.setAttribute("aria-selected", b.dataset.tab === t); }
-  for (const id of ["rank", "charts", "acc", "help"]) $(id).hidden = id !== t;
-  $("filters").hidden = t === "acc" || t === "help"; draw();
+  for (const id of ["plan", "rank", "charts", "acc", "help"]) $(id).hidden = id !== t;
+  $("filters").hidden = !["rank", "charts"].includes(t); draw();
 }
 async function load() {
   const r = await fetch("site.json?t=" + Date.now(), { cache: "no-store" });
@@ -156,7 +190,11 @@ $("setup").addEventListener("click", () => { $("panel").hidden = !$("panel").hid
 $("save").addEventListener("click", () => { const v = $("token").value.trim(); if (!v) return; store.set(v, $("remember").checked); $("token").value = ""; $("panel").hidden = true; say("Key saved. Update now works with one click."); });
 $("forget").addEventListener("click", () => { store.del(); say("Key removed from this browser."); });
 for (const b of document.querySelectorAll("nav button")) b.addEventListener("click", () => { if (b.dataset.tab !== tab) $("q").value = ""; go(b.dataset.tab); });
+const fmt = () => { const m = money(); $("money").value = m ? m.toLocaleString("vi-VN") : ""; };
+try { $("money").value = localStorage.getItem("vnsa-money") || "10000000"; } catch { $("money").value = "10000000"; }
+fmt();
+$("money").addEventListener("input", () => { fmt(); try { localStorage.setItem("vnsa-money", String(money())); } catch { } if (D) drawPlan(); });
 $("q").addEventListener("input", draw); $("sector").addEventListener("change", draw);
 if (onPages) $("repo").href = `https://github.com/${OWNER}/${REPO}`;
 load().catch((e) => { $("meta").textContent = "Could not load results: " + e.message; });
-go(["rank", "charts", "acc", "help"].find((t) => location.hash === "#" + t) || "rank");
+go(["plan", "rank", "charts", "acc", "help"].find((t) => location.hash === "#" + t) || "plan");

@@ -9,7 +9,7 @@ from datetime import datetime
 import pandas as pd
 import yaml
 
-from . import accuracy, data, fanchart, features, forecast, levels, model, site, track
+from . import accuracy, data, fanchart, features, forecast, levels, model, site, steady, track, vnd
 from .report import ROOT, outdir_for, write_outputs  # noqa: F401
 
 
@@ -110,8 +110,14 @@ def run(cfg: dict, provider: str | None = None, only_sector: str | None = None,
         fanchart.write(fc, frames, [r["ma"] for r in rows], notes, provider)
     except ValueError as e:
         warnings.append(f"Chuỗi thời gian: {e}")
+    sh = None
+    if provider != "synthetic" and index is not None:
+        try:
+            sh = steady.build(vnd.update(), index, data.load(steady.ETF, cfg["history_days"], provider), log)
+        except Exception as e:
+            warnings.append(f"Danh sách ổn định: {e}")
     updated = data.vn_now().strftime("%Y-%m-%d %H:%M")
-    site.write(provider, updated, df, frames, fc, val, acc, live, warnings)
+    site.write(provider, updated, df, frames, fc, val, acc, live, warnings, sh)
     if only_sector:
         df = df[df["nganh"].str.lower().str.contains(only_sector.lower(), regex=False)]
     return df, {"updated": updated, "horizon": H, "provider": provider,

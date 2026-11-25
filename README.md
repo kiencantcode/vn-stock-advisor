@@ -74,3 +74,9 @@ Mỗi lần `python run.py` tạo `output/forecast.html`: biểu đồ và dải
   thống kê (t >= 2.4) trên 500 phiên gần nhất.
 - Ghi vào `output/history/forecasts.csv` (không ghi đè); `python run.py --score` chấm bằng giá thật.
 - Mỗi lần chạy khoảng 1,5 phút.
+
+## Danh sách ổn định (giữ từ 1 tuần trở lên, trên giấy)
+
+- Trang web, mục **Steady picks**; mã nguồn `advisor/steady.py`, dữ liệu `advisor/vnd.py`. Xem lại mỗi 20 phiên, giữ 10 mã. Kết quả và giới hạn: `STEADY_REPORT.md`.
+- Nhật ký chỉ ghi thêm: `output/history/steady_rankings.csv`. Học lại vào 1/1 và 1/7.
+- Lần chạy đầu tải toàn bộ lịch sử từ VNDirect (2-3 phút).
