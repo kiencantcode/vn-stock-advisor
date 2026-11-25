@@ -223,7 +223,8 @@ def skill(c: pd.DataFrame, days: dict) -> dict:
 def build(p: pd.DataFrame, index: pd.DataFrame, etf: pd.DataFrame, log: bool = True) -> dict:
     w = wide(p)
     c = w["c"]
-    now = rank_today(panel(p, w, index), w)
+    x = panel(p, w, index)
+    now = rank_today(x, w)
     if log:
         append(now)
     days, late = valid_days(c, _read())
@@ -239,7 +240,8 @@ def build(p: pd.DataFrame, index: pd.DataFrame, etf: pd.DataFrame, log: bool = T
     rows = [{"sym": r["sym"], "rank": int(r["rank"]), "ago5": r["ago5"], "ago20": r["ago20"], "lo20": r["lo20"], "hi20": r["hi20"], "price": r["price"], "ret20": r["ret20"],
              "vol": r["vol20"] * 250 ** 0.5, "floor20": int(r["floor20"]), "lq": int(r["lqr"])}
             for r in now.to_dict("records")]
-    return {"asof": now["date"].iloc[0].date().isoformat(), "model_id": model_id(), "rows": rows,
+    from . import verify  # tránh import vòng
+    return {"verify": verify.build(x, w, now, e, log), "asof": now["date"].iloc[0].date().isoformat(), "model_id": model_id(), "rows": rows,
             "hold": pf["hold"], "held": held, "pending": pf["pending"], "next_in": pf["next_in"], "trades": pf["trades"][-10:],
             "live": live, "skill": skill(c, days), "late": late, "logged": len(days),
             "fund": {"sym": ETF, "price": float(e.iloc[-1]), "date": etf["date"].iloc[-1].date().isoformat()}}

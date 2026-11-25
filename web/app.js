@@ -73,6 +73,25 @@ function drawPlan() {
     s.rows.slice(0, 30).map((r) => row([String(r.rank), r.sym, ag(r.ago5), ag(r.ago20), f2(r.price), pc(r.ret20, 1), rng(r), pc(r.vol), r.floor20 >= 3 ? el("span", { class: "sig down" }, "Rủi ro cao") : ""], 2)), 2));
   $("planout").replaceChildren(...out);
 }
+function drawCheck() {
+  const v = D.steady && D.steady.verify;
+  if (!v) return $("check").replaceChildren(el("p", {}, "Phần này hiện sau lần cập nhật tới."));
+  const s = v.summary, out = [], tries = (n, d) => d ? `${n}/${d} tuần` : "–";
+  out.push(el("p", { class: "notice" }, s.pass ? "Đạt mức tối thiểu: từ 26 tuần trở lên và thắng quỹ rõ ràng (t ≥ 1.65). Vẫn có thể lỗ." :
+    `Chưa đạt. Cần ít nhất 26 tuần và thắng quỹ với t ≥ 1.65 (hiện có ${s.weeks} tuần). Một tuần chưa nói lên điều gì: trong 2023–2026, sau một tuần thắng quỹ, tuần kế tiếp vẫn kém quỹ trung bình 0,1%.`));
+  out.push(el("h2", {}, "Điểm chung, các tuần không chồng nhau"), table(["Chỉ số", "Kết quả thật", "Khi thử 2023–2026"], [
+    row(["Số tuần đã kiểm chứng", String(s.weeks), "–"]), row(["Tuần có lời, sau phí", tries(s.up, s.weeks), "49%"]), row(["Tuần thắng quỹ E1VFVN30", tries(s.beat, s.weeks), "42%"]),
+    row(["Giá thật nằm trong khoảng dự đoán", pc(s.inside), "79%"]), row(["Tổng lãi/lỗ của dự đoán, sau phí", s.ret == null ? "–" : gain(s.ret), "–"]), row(["Tổng lãi/lỗ của quỹ", s.fund == null ? "–" : gain(s.fund), "–"]),
+    row(["Tuần tệ nhất", pc(s.worst, 1), "−16,8%"]), row(["Độ chắc chắn (t)", s.t == null ? "cần ít nhất 8 tuần" : s.t.toFixed(1), "–"])]));
+  out.push(el("p", { class: "muted" }, "Mỗi dự đoán được tính như mua mới 6 mã rồi bán hết sau 5 phiên, nên phí cao hơn Danh sách ổn định (chỉ bán mã rớt hạng)."));
+  for (const d of v.items) {
+    const st = d.late ? "Lưu trễ, không tính." : d.done ? `Đã kiểm chứng đến ${d.until}.` : d.until ? `Đang chờ: đã giữ ${d.age}/5 phiên, giá đến ${d.until}.` : "Đang chờ phiên kế tiếp để mua.";
+    out.push(el("h3", {}, `Dự đoán ngày ${d.asof}`), el("p", {}, st + (d.ret == null ? "" : ` Trung bình ${pc(d.ret, 1)} sau phí, quỹ ${pc(d.fund, 1)}.`)),
+      table(["Mã", "Giá đặt mua", "Khoảng dự đoán (8/10 lần)", "Giá khớp", d.done ? "Giá sau 5 phiên" : "Giá mới nhất", "Lãi/lỗ sau phí", "Đúng khoảng?"],
+        d.picks.map((p) => row([p.sym, f2(p.buy), `${f2(p.lo)} – ${f2(p.hi)}`, p.fill == null ? "chưa mua" : typeof p.fill === "string" ? p.fill : f2(p.fill), f2(p.now), p.ret == null ? "–" : gain(p.ret), p.inside == null ? "–" : p.inside ? "Đúng" : "Sai"]))));
+  }
+  $("check").replaceChildren(...out);
+}
 function showStock(sym) { $("q").value = sym; go("charts"); }
 function drawRank() {
   const rows = filtered().map((s) => {
@@ -142,10 +161,10 @@ function drawAcc() {
   kids.push(el("p", { class: "muted" }, (v.days || 0) < 60 ? "Còn quá sớm để kết luận, cần ít nhất 60 phiên đã chấm." : "Đã chấm ít nhất 60 phiên."));
   $("acc").replaceChildren(...kids);
 }
-function draw() { if (!D) return; drawPlan(); drawRank(); drawCharts(); drawAcc(); }
+function draw() { if (!D) return; drawPlan(); drawCheck(); drawRank(); drawCharts(); drawAcc(); }
 function go(t) {
   tab = t; for (const b of document.querySelectorAll("nav button")) { b.classList.toggle("on", b.dataset.tab === t); b.setAttribute("aria-selected", b.dataset.tab === t); }
-  for (const id of ["plan", "rank", "charts", "acc", "help"]) $(id).hidden = id !== t;
+  for (const id of ["plan", "check", "rank", "charts", "acc", "help"]) $(id).hidden = id !== t;
   $("filters").hidden = !["rank", "charts"].includes(t); draw();
 }
 async function load() {
@@ -200,4 +219,4 @@ $("money").addEventListener("input", () => { fmt(); try { localStorage.setItem("
 $("q").addEventListener("input", draw); $("sector").addEventListener("change", draw);
 if (onPages) $("repo").href = `https://github.com/${OWNER}/${REPO}`;
 load().catch((e) => { $("meta").textContent = "Không tải được kết quả: " + e.message; });
-go(["plan", "rank", "charts", "acc", "help"].find((t) => location.hash === "#" + t) || "plan");
+go(["plan", "check", "rank", "charts", "acc", "help"].find((t) => location.hash === "#" + t) || "plan");
