@@ -46,7 +46,7 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.first.outputs.page_url || steps.second.outputs.page_url }}
+      url: ${{ steps.first.outputs.page_url || steps.second.outputs.page_url || steps.third.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
         with: { ref: main }
@@ -62,4 +62,10 @@ jobs:
         run: sleep 45
       - id: second
         if: steps.first.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - if: steps.second.outcome == 'failure'
+        run: sleep 600   # GitHub Pages đang lỗi: thử lần cuối sau 10 phút
+      - id: third
+        if: steps.second.outcome == 'failure'
         uses: actions/deploy-pages@v5
