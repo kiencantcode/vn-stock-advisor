@@ -4,7 +4,6 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-DATA_VERSION = 2  # 2: khối lượng suy từ giá trị khớp thật (vnd.true_value), bỏ rò rỉ chia tách tương lai
 STOCK = (
     "ret1 ret5 ret10 ret20 rsi14 macd_h bb_pos bb_width atr_pct vol_ratio dist_ma20 dist_ma50 "
     "range_pos20 vol20 ret60 ret120 mom12_1 vol_ratio5 dist_ma200 vol60 hi52 max20 min20 illiq turn "

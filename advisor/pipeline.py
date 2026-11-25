@@ -9,7 +9,7 @@ from datetime import datetime
 import pandas as pd
 import yaml
 
-from . import accuracy, data, fanchart, features, forecast, levels, model, short, site, track, vnd
+from . import accuracy, data, fanchart, features, forecast, levels, model, site, track
 from .report import ROOT, outdir_for, write_outputs  # noqa: F401
 
 
@@ -64,14 +64,6 @@ def run(cfg: dict, provider: str | None = None, only_sector: str | None = None,
             index = data.load(data.INDEX, cfg["history_days"], provider)
         except Exception as e:
             warnings.append(f"VNINDEX: {e} (dùng trung bình các mã thay thế)")
-    store = None
-    if provider != "synthetic":
-        try:
-            store = vnd.update()
-            frames = vnd.true_value(frames, store)
-        except Exception as e:
-            warnings.append(f"VNDirect: {e}. Không cập nhật mô hình 1 tháng, không ghi nhật ký phiên này.")
-            log = False  # đặc trưng dùng khối lượng chưa sửa: không được chấm điểm
     x = features.build_panel(frames, index, H)
     core = set(sector_of) & set(frames)
     val = get_validation(x, core, cfg, outdir_for(provider), force_validate)
@@ -118,14 +110,8 @@ def run(cfg: dict, provider: str | None = None, only_sector: str | None = None,
         fanchart.write(fc, frames, [r["ma"] for r in rows], notes, provider)
     except ValueError as e:
         warnings.append(f"Chuỗi thời gian: {e}")
-    sh = None
-    if store is not None and index is not None:
-        try:
-            sh = short.build(store, index, data.load(short.ETF, cfg["history_days"], provider), log)
-        except Exception as e:
-            warnings.append(f"Mô hình 1 tháng: {e}")
     updated = data.vn_now().strftime("%Y-%m-%d %H:%M")
-    site.write(provider, updated, df, frames, fc, val, acc, live, warnings, sh)
+    site.write(provider, updated, df, frames, fc, val, acc, live, warnings)
     if only_sector:
         df = df[df["nganh"].str.lower().str.contains(only_sector.lower(), regex=False)]
     return df, {"updated": updated, "horizon": H, "provider": provider,

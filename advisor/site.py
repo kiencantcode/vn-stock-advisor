@@ -22,7 +22,7 @@ def _clean(v):
     return v
 
 
-def write(provider, updated, df, frames, fc, val, acc, live, warnings, short=None) -> None:
+def write(provider, updated, df, frames, fc, val, acc, live, warnings) -> None:
     stocks = []
     for r in df.to_dict("records"):
         h = frames[r["ma"]].tail(HIST)
@@ -37,11 +37,8 @@ def write(provider, updated, df, frames, fc, val, acc, live, warnings, short=Non
         stocks.append(s)
     out = {"updated": updated, "asof": df["ngay_du_lieu"].iloc[0] if len(df) else None, "gate": val["gate"],
            "holdout": val.get("holdout"), "accuracy": acc["horizons"], "live": live, "warnings": warnings,
-           "short": short, "forecast": None if fc is None else {"best": fc["best"], "cover": fc["cover"]}, "stocks": stocks}
+           "forecast": None if fc is None else {"best": fc["best"], "cover": fc["cover"]}, "stocks": stocks}
     path = os.path.join(outdir_for(provider), "site.json")
-    if short is None and provider != "synthetic" and os.path.exists(path):  # giữ kết quả cũ, trang hiện ngày của nó
-        with open(path, encoding="utf-8") as f:
-            out["short"] = json.load(f).get("short")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(_clean(out), f, ensure_ascii=False, allow_nan=False)

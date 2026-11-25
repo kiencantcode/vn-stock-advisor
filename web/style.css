@@ -31,7 +31,3 @@ svg{width:100%;height:auto;display:block}svg text{font:11px system-ui;fill:var(-
 .key{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);margin:10px 0}.key svg{width:22px;height:10px;display:inline-block;margin-right:6px}
 dt{font-weight:600}dd{margin:0 0 6px}#token{flex:1;min-width:220px}footer{margin-top:26px}
 th{white-space:normal}
-
-.big{font-size:24px;font-weight:700;margin:4px 0}.grid>.card{margin:0}#money{font-size:18px;font-weight:600;width:190px;text-align:right}
-
-#planout>.grid{margin-bottom:18px}

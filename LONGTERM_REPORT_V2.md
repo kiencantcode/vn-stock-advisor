@@ -51,9 +51,9 @@ The fund returned 17.6% a year in 2023-26. Much of the model's advantage comes f
 
 ## Leak found and fixed
 
-Two features used adjusted price x raw volume. Adjusted prices depend on later splits and dividends, so old values were 6-40% of true traded value. The short search above uses true traded value. Effect on the live model (31 stocks, 2023-26): rank IC 0.0300 to 0.0289. Fixed in the live code on 24 November 2026 (`advisor/vnd.py`), which restarts the live score.
+Two features used adjusted price x raw volume. Adjusted prices depend on later splits and dividends, so old values were 6-40% of true traded value. The short search above uses true traded value. Effect on the live model (31 stocks, 2023-26): rank IC 0.0300 to 0.0289. Fixed in the live code on 24 November 2026, then removed on 25 November 2026 when the owner chose to return to the earlier version. **The live code has the leak again.** The fixed version is commit 33e1225.
 
-The live paper model (`advisor/short.py`) uses the settings most often selected: 20-session target, 10-session change, 6 stocks, keep to rank 18, retrained at each update with 5 seeds, with the ceiling/floor rule. Replayed over 2020-26 from four different start days: 22-37% a year; 2023-26: 13-31%. Rank IC at 20 sessions: 0.076 (t 4.5) in 2020-26, 0.046 (t 2.3) in 2023-26.
+The paper model (`advisor/short.py`, commit 33e1225, no longer live) used the settings most often selected: 20-session target, 10-session change, 6 stocks, keep to rank 18, retrained at each update with 5 seeds, with the ceiling/floor rule. Replayed over 2020-26 from four different start days: 22-37% a year; 2023-26: 13-31%. Rank IC at 20 sessions: 0.076 (t 4.5) in 2020-26, 0.046 (t 2.3) in 2023-26.
 
 ## Limits
 
