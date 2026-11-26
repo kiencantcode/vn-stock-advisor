@@ -13,7 +13,7 @@ on:
   workflow_dispatch: {}
   push:
     branches: [main]
-    paths: ["web/**", "GUIDE.pdf", ".github/workflows/daily.yml"]   # chỉ xuất bản lại trang
+    paths: ["web/**", "GUIDE.pdf", ".github/workflows/daily.yml", "output/site.json"]   # chỉ xuất bản lại trang (kể cả khi cập nhật từ máy)
 concurrency:
   group: daily-update
   cancel-in-progress: false

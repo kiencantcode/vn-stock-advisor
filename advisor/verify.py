@@ -75,7 +75,8 @@ def check(c, op, lo, fund: pd.Series, path: str = LOG) -> list[dict]:
         out.append({"asof": asof, "late": bool(late), "done": bool(done), "age": int(max(0, j - i - 1)),
                     "until": grid[j].date().isoformat() if j > i else None, "picks": picks,
                     "ret": float(np.mean(rets)) if rets else None,
-                    "fund": float(f.iloc[j] / f.iloc[i + 1] - 1) if j > i else None})
+                    # quỹ tính từ giá đóng cửa phiên dự đoán, giống lệnh mua đặt ở giá đó
+                 "fund": float(f.iloc[j] / f.iloc[i] - 1) if j > i else None})
     return sorted(out, key=lambda d: d["asof"], reverse=True)
 
 
