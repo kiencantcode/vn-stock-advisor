@@ -73,3 +73,19 @@ Plan: [PREREGISTRATION_V5.md](PREREGISTRATION_V5.md), recorded before running. C
 | E1VFVN30 fund | | | 4.9% | 17.6% | -42% | |
 
 Rule check: no set has a higher return than B in both periods; paired t against B is negative for all four (-0.28 to -0.85). **B stays live.** The new data makes the whole ranking more accurate (IC of A is 0.093 vs 0.067 over 2019-26, t 5.6), but the top 6 do not earn more, and none beats the fund clearly in 2023-26 (t 0.13-0.57). Most useful new inputs by model gain: earnings change over 63 and 250 sessions, E/P, foreign room left, sales growth.
+
+# V6: "buy only when everything looks good" (result: not useful)
+
+Plan: [PREREGISTRATION_V6.md](PREREGISTRATION_V6.md). Code: `research/lab_v6.py`; results in `research/v6_results.json`. None of the 10 variants passed.
+
+| Variant | Signals per month | Per year 2019-22 | Per year 2023-26 | Worst fall 2019-22 | Worst fall 2023-26 | Signals beating avg stock 2023-26 |
+|---|---|---|---|---|---|---|
+| A-S1 model top 10 only | 15 | 52% | 19.5% | -50% | -26% | 49% |
+| A-S2 + VN-Index above MA200 | 10 | 48% | 7.5% | -18% | -29% | 50% |
+| A-S3 + price above MA50 | 8 | 45% | 11.2% | -19% | -23% | 50% |
+| A-S4 + profitable, earnings up | 6 | 38% | 9.9% | -19% | -25% | 49% |
+| A-S5 all good (+ foreigns buying, up-day volume) | 3 | 31% | 7.0% | -23% | -19% | 46% |
+| B-S5 all good, current model | 4 | 26% | 9.5% | -21% | -20% | 49% |
+| E1VFVN30 fund | | 4.9% | 17.6% | -42% | -16% | |
+
+The filters halved the worst fall in 2019-22 (they kept out of most of 2022), but in 2023-26 every filtered variant earned far less than the fund, mostly because the market filter missed the 2025 rally (fund +54%; filtered variants 2-20%). Signals that met every condition beat the average stock less than half the time in 2023-26.
