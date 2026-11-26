@@ -89,3 +89,7 @@ Plan: [PREREGISTRATION_V6.md](PREREGISTRATION_V6.md). Code: `research/lab_v6.py`
 | E1VFVN30 fund | | 4.9% | 17.6% | -42% | -16% | |
 
 The filters halved the worst fall in 2019-22 (they kept out of most of 2022), but in 2023-26 every filtered variant earned far less than the fund, mostly because the market filter missed the 2025 rally (fund +54%; filtered variants 2-20%). Signals that met every condition beat the average stock less than half the time in 2023-26.
+
+## V6 on the site (paper only)
+
+The site now shows the B-S5 signal ("all good", current model) as the tab "Tín hiệu MUA/BÁN": `advisor/signals.py`, data in `advisor/extra.py`. B-S5 was picked over A-S5 because it earned more in 2023-26 (9.5% vs 7.0% a year) and reuses the live model. Each session's signals for the top 100 are saved to `output/history/signals.csv` before 9:00 the next session; the paper portfolio is rebuilt only from that log. On 26 Nov 2026 VN-Index was 8.5% below its 200-session average, so there were no buy signals.

@@ -19,10 +19,10 @@
 <label><input id="remember" type="checkbox"> Ghi nhớ trên máy này</label>
 <button id="save" class="primary">Lưu</button><button id="forget">Xoá khoá</button></div></section>
 <p id="verdict" class="notice"></p>
-<nav role="tablist"><button data-tab="plan" class="on">Danh sách ổn định</button><button data-tab="check">Kiểm chứng</button><button data-tab="rank">Xếp hạng hằng ngày</button><button data-tab="charts">Dự báo 5 phiên</button><button data-tab="acc">Độ chính xác</button><button data-tab="help">Hướng dẫn</button></nav>
+<nav role="tablist"><button data-tab="plan" class="on">Danh sách ổn định</button><button data-tab="sig">Tín hiệu MUA/BÁN</button><button data-tab="check">Kiểm chứng</button><button data-tab="rank">Xếp hạng hằng ngày</button><button data-tab="charts">Dự báo 5 phiên</button><button data-tab="acc">Độ chính xác</button><button data-tab="help">Hướng dẫn</button></nav>
 <div class="row filters" id="filters"><input id="q" type="search" placeholder="Tìm mã" aria-label="Tìm mã">
 <select id="sector" aria-label="Ngành"><option value="">Mọi ngành</option></select></div>
-<section id="plan"><div class="card row"><label for="money"><b>Tiền giả định</b></label><input id="money" inputmode="numeric" autocomplete="off" maxlength="18"><span>VND</span><span class="muted">Chỉ lưu trong trình duyệt này.</span></div><div id="planout"></div></section><section id="check" hidden></section><section id="rank" hidden></section><section id="charts" hidden></section><section id="acc" hidden></section>
+<section id="plan"><div class="card row"><label for="money"><b>Tiền giả định</b></label><input id="money" inputmode="numeric" autocomplete="off" maxlength="18"><span>VND</span><span class="muted">Chỉ lưu trong trình duyệt này.</span></div><div id="planout"></div></section><section id="sig" hidden></section><section id="check" hidden></section><section id="rank" hidden></section><section id="charts" hidden></section><section id="acc" hidden></section>
 <section id="help" hidden class="card">
 <h2>Cách dùng trang này</h2>
 <ol><li>Trang tự cập nhật sau mỗi phiên giao dịch, thường từ 16 giờ. Nếu GitHub trễ, có thêm các lần chạy dự phòng buổi tối và sáng sớm hôm sau.</li>
@@ -36,6 +36,7 @@
 <dt>Vì sao không có giá cắt lỗ, chốt lời?</dt><dd>Đã thử 14 cách bán với 5 cách mua và 240 mô hình (16.800 trường hợp). Với mô hình này, bán theo hạng được chọn; cắt lỗ khi giảm 10% từ đỉnh giảm bớt mức lỗ nặng nhất (54% thay vì 60%) nhưng lợi nhuận thấp hơn.</dd>
 <dt>Khoảng 20 phiên</dt><dd>Giá đóng cửa sau 20 phiên (tính từ giá hiện tại) nằm trong khoảng này khoảng 8 trên 10 lần. Trong 2023–2026 là 79%. Đây không phải giá mục tiêu.</dd>
 <dt>Giá đã mua</dt><dd>Giá mua giả trung bình, đã quy theo chia tách và cổ tức nên có thể khác giá niêm yết hôm đó. Lãi/lỗ của từng mã chưa trừ phí.</dd>
+<dt>Tín hiệu MUA/BÁN</dt><dd>Chỉ báo MUA khi đủ cả 7 điều kiện: hạng ổn định trong top 10, VN-Index trên trung bình 200 phiên, giá trên trung bình 50 phiên, công ty có lãi, lợi nhuận 4 quý gần nhất cao hơn một năm trước, khối ngoại mua ròng 20 phiên, tiền vào ngày tăng nhiều hơn ngày giảm. Mua ATC phiên kế tiếp, mỗi mã 1/6 tiền, tối đa 6 mã. Giữ ít nhất 20 phiên, sau đó bán ATC khi mất một điều kiện. Không đặt chốt lời: khi thử, bán theo giá không tốt hơn bán theo tín hiệu. Số liệu P/E và lợi nhuận chỉ dùng sau ngày công ty công bố.</dd>
 <dt>Kiểm chứng</dt><dd>Mỗi phiên, 6 mã đầu, giá đặt mua và khoảng giá được lưu trước 9 giờ phiên kế tiếp và không sửa lại. Sau khi mua và giữ 5 phiên, trang so với giá thật và với quỹ. Dự đoán lưu trễ bị loại. Điểm chung chỉ tính các tuần không chồng nhau.</dd>
 <dt>Hạng ổn định</dt><dd>Trung bình hạng 20 phiên gần nhất trong khoảng 100 mã HOSE giao dịch nhiều nhất, nhắm tới khoảng 1 tháng tới.</dd>
 <dt>E1VFVN30</dt><dd>Quỹ mua bán như cổ phiếu, gồm 30 công ty lớn trên sàn HOSE.</dd>
