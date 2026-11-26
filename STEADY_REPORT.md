@@ -58,3 +58,18 @@ C beat the V3 figure in 2023-26 (14.6% against 14.0%), a margin well within luck
 That setting with hindsight: 28% (2018-22), 19% (2023-26), worst fall -60%; 2023-26 t = 0.20 against the fund. Five start days, 2023-26: 16.5-21%. At 0.6 / 0.8 / 1.0% cost: 17 / 15 / 13%. Buying at the close: 18%. Trailing stop 10%: 17%, worst fall -54%. Ten stocks: 16%. Top 50 liquid only: 12%. Overlap 91% after a day, 70% after five sessions.
 
 PBO 0.15; reality check against the fund p = 0.10; deflated Sharpe of the best 0.47; 10% of eligible settings beat the fund in 2023-26. **Verdict: not proven, paper only.**
+
+# V5: foreign flows, financial results, richer volume (result: keep V4)
+
+Plan: [PREREGISTRATION_V5.md](PREREGISTRATION_V5.md), recorded before running. Code: `research/extra_data.py`, `research/lab_v5.py`; results in `research/v5_results.json`.
+
+| Set | IC 2019-22 | IC 2023-26 | Per year 2019-22 | Per year 2023-26 | Worst fall 2019-26 | Weeks beating fund 2023-26 |
+|---|---|---|---|---|---|---|
+| B current | 0.079 | 0.055 | 46% | 18.2% | -64% | 41% |
+| V + volume | 0.106 | 0.065 | 39% | 19.0% | -63% | 38% |
+| F + foreign | 0.081 | 0.065 | 33% | 21.6% | -53% | 44% |
+| K + financial results | 0.092 | 0.053 | 34% | 21.3% | -56% | 43% |
+| A all | 0.110 | 0.075 | 44% | 18.6% | -48% | 45% |
+| E1VFVN30 fund | | | 4.9% | 17.6% | -42% | |
+
+Rule check: no set has a higher return than B in both periods; paired t against B is negative for all four (-0.28 to -0.85). **B stays live.** The new data makes the whole ranking more accurate (IC of A is 0.093 vs 0.067 over 2019-26, t 5.6), but the top 6 do not earn more, and none beats the fund clearly in 2023-26 (t 0.13-0.57). Most useful new inputs by model gain: earnings change over 63 and 250 sessions, E/P, foreign room left, sales growth.
