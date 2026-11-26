@@ -78,22 +78,26 @@ function drawSig() {
   if (!g) return $("sig").replaceChildren(el("p", { class: "notice" }, "Phần này hiện sau lần cập nhật tới."));
   if (g.error) return $("sig").replaceChildren(el("p", { class: "notice" }, "Chưa tính được tín hiệu hôm nay (" + g.error + "). Lần cập nhật sau sẽ thử lại."));
   const m = money(), mk = g.market, ok = (v) => el("span", { class: "sig " + (v ? "up" : "down") }, v ? "✓" : "✗");
-  out.push(el("p", { class: "notice" }, "Chỉ theo dõi trên giấy. Khi thử 2023–2026, cách này lời khoảng 9,5% mỗi năm, thấp hơn quỹ E1VFVN30 (17,6%). Không phải lời khuyên đầu tư."));
+  out.push(el("p", { class: "notice" }, "Chỉ theo dõi trên giấy. Khi thử 2023–2026, cách này lời khoảng 16% mỗi năm, vẫn thấp hơn quỹ E1VFVN30 (17,6%). Không phải lời khuyên đầu tư."));
   out.push(el("h2", {}, `Việc cần làm ở phiên kế tiếp (theo giá đóng cửa ${g.asof})`),
-    el("p", {}, `Thị trường: VN-Index ${mk.ok ? "cao" : "thấp"} hơn trung bình 200 phiên ${pc(Math.abs(mk.m200))}. ` + (mk.ok ? "Thị trường khỏe, được phép mua mã mới." : "Thị trường yếu, không mua mã mới.")));
+    el("p", {}, `Thị trường: VN-Index so với trung bình 200 phiên ${pc(mk.m200, 1)}, so với trung bình 50 phiên ${pc(mk.m50, 1)}, 20 phiên qua ${pc(mk.r20, 1)}. ` +
+      (mk.ok ? "Thị trường khỏe: được mua mã mới, tiền chưa dùng để trong quỹ E1VFVN30." : "Thị trường yếu: không mua mã mới, tiền chưa dùng để tiền mặt (bán quỹ E1VFVN30 nếu đang giữ).")));
   const sells = g.held.filter((h) => h.action === "BÁN");
   const acts = [...g.buy.map((b) => row([b.sym, el("span", { class: "sig up" }, "MUA"), f2(b.price), m ? vnd(m / 6) : "1/6 số tiền",
       m ? Math.floor(m / 6 / (b.price * 1000)).toLocaleString("vi-VN") : "–", "Đủ cả 7 điều kiện"])),
     ...sells.map((h) => row([h.sym, el("span", { class: "sig down" }, "BÁN"), f2(h.price), "Bán hết", "–", h.why.join("; ")]))];
+  const fs = g.summary ? g.summary.infund : 0;
+  if (mk.ok && g.summary && g.summary.cash > 0.01) acts.push(row(["E1VFVN30", el("span", { class: "sig up" }, "MUA quỹ"), f2(D.steady.fund.price), "Phần tiền chưa dùng", "–", "Thị trường khỏe"]));
+  if (!mk.ok && fs > 0.01) acts.push(row(["E1VFVN30", el("span", { class: "sig down" }, "BÁN quỹ"), f2(D.steady.fund.price), "Bán hết quỹ", "–", "Thị trường yếu"]));
   out.push(acts.length ? table(["Mã", "Việc", "Giá tham khảo", "Số tiền", "Số cổ phiếu", "Lý do"], acts)
     : el("p", { class: "notice" }, "Không cần làm gì: không có mã mới đủ cả 7 điều kiện và không có mã nào phải bán."));
-  out.push(el("p", { class: "muted" }, "Mua và bán bằng lệnh ATC (giá đóng cửa) ở phiên kế tiếp. Mã đang ở giá trần thì không mua, đang ở giá sàn thì chưa bán. Mỗi mã 1/6 số tiền, tối đa 6 mã, phần còn lại để tiền mặt. Mã đã mua giữ ít nhất 20 phiên; sau đó bán khi mất một điều kiện. Giá nghìn đồng."));
+  out.push(el("p", { class: "muted" }, "Mua và bán bằng lệnh ATC (giá đóng cửa) ở phiên kế tiếp. Mã đang ở giá trần thì không mua, đang ở giá sàn thì chưa bán. Mỗi mã 1/6 số tiền, tối đa 6 mã. Phần còn lại: để trong quỹ E1VFVN30 khi thị trường khỏe, tiền mặt khi thị trường yếu; cần tiền mua mã mới thì bán bớt quỹ. Mã đã mua giữ ít nhất 20 phiên; sau đó bán khi mất một điều kiện. Giá nghìn đồng."));
   out.push(el("h2", {}, "Mã đang giữ (trên giấy)"), g.held.length ? table(["Mã", "Ngày mua", "Giá mua", "Giá hiện tại", "Lãi/lỗ sau phí", "Số phiên đã giữ", "Khuyên"],
     g.held.map((h) => row([h.sym, h.buy_date, f2(h.buy), f2(h.price), gain(h.pnl), String(h.age),
       h.action === "BÁN" ? el("span", { class: "sig down" }, "BÁN phiên tới") : h.left > 0 ? `GIỮ (ít nhất ${h.left} phiên nữa)` : "GIỮ (còn đủ điều kiện)"]))) : el("p", {}, "Chưa giữ mã nào."));
   out.push(el("h2", {}, "Sổ theo dõi"));
   const s = g.summary;
-  out.push(el("p", {}, s ? `Từ ${s.start}: ${s.sessions} phiên. Danh mục giấy ${pc(s.model, 1)} sau phí, quỹ E1VFVN30 ${pc(s.fund, 1)}. Đang để tiền mặt ${pc(s.cash)}. Đã đóng ${s.trades} lệnh: ${s.win} lệnh lời, ${s.beat} lệnh thắng quỹ. Sổ lưu trễ bị loại: ${s.late}.` + (s.sessions < 120 ? " Còn quá sớm để kết luận, cần ít nhất 6 tháng." : "")
+  out.push(el("p", {}, s ? `Từ ${s.start}: ${s.sessions} phiên. Danh mục giấy ${pc(s.model, 1)} sau phí, quỹ E1VFVN30 ${pc(s.fund, 1)}. Đang để tiền mặt ${pc(s.cash)}, trong quỹ ${pc(s.infund)}. Đã đóng ${s.trades} lệnh: ${s.win} lệnh lời, ${s.beat} lệnh thắng quỹ. Sổ lưu trễ bị loại: ${s.late}.` + (s.sessions < 120 ? " Còn quá sớm để kết luận, cần ít nhất 6 tháng." : "")
     : "Sổ bắt đầu từ hôm nay. Tín hiệu mỗi phiên được lưu trước 9 giờ phiên kế tiếp và không sửa lại."));
   if (g.trades.length) out.push(table(["Mã", "Ngày mua", "Giá mua", "Ngày bán", "Giá bán", "Số phiên", "Lãi/lỗ sau phí", "Quỹ cùng lúc", "Lý do bán"],
     g.trades.map((t) => row([t.sym, t.buy_date, f2(t.buy), t.sell_date, f2(t.sell), String(t.sessions), gain(t.ret), pc(t.fund, 1), t.why.join("; ")]))));
@@ -103,8 +107,8 @@ function drawSig() {
     table(["Hạng", "Mã", "Giá", "1", "2", "3", "4", "5", "6", "7", "Tín hiệu"],
       g.rows.map((r) => row([String(r.rank), r.sym, f2(r.price), ...C.map((k) => ok(r.ok[k])), r.signal ? el("span", { class: "sig up" }, "MUA") : "–"], 2)), 2));
   out.push(el("h2", {}, "Kiểm định quá khứ (mỗi năm, sau phí)"), table(["", "2019–2022", "2023–2026", "Giảm nặng nhất 2019–22", "Giảm nặng nhất 2023–26"],
-    [["Tín hiệu MUA/BÁN này", "26%", "9,5%", "−21%", "−20%"], ["Quỹ E1VFVN30", "4,9%", "17,6%", "−42%", "−16%"]].map((r) => row(r))),
-    el("p", { class: "muted" }, "Khoảng 4 tín hiệu mua mỗi tháng; khoảng 28% thời gian không giữ mã nào. Lọc theo thị trường tránh được phần lớn đợt giảm 2022 nhưng bỏ lỡ đợt tăng 2025 (quỹ +54%). Chi tiết: STEADY_REPORT.md, phần V6."));
+    [["Tín hiệu MUA/BÁN này", "33%", "16%", "−22%", "−17%"], ["Bản trước (thị trường theo TB 200 phiên, tiền mặt nằm không)", "26%", "9,5%", "−21%", "−20%"], ["Quỹ E1VFVN30", "4,9%", "17,6%", "−42%", "−16%"]].map((r) => row(r))),
+    el("p", { class: "muted" }, "Khoảng 4 tín hiệu mua mỗi tháng. Bản này chọn trong 16 cách (V7), chỉ 1 cách đạt luật, và có thể chỉ do may: với 15 cách thử, trung bình gần 1 cách đạt dù không cách nào thật sự tốt hơn. Năm 2022 giảm 13% (quỹ −33%); năm 2025 vẫn chỉ +21% (quỹ +54%). Chi tiết: STEADY_REPORT.md, phần V6 và V7."));
   $("sig").replaceChildren(...out);
 }
 function drawCheck() {

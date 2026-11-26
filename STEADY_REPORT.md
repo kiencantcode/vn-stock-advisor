@@ -93,3 +93,17 @@ The filters halved the worst fall in 2019-22 (they kept out of most of 2022), bu
 ## V6 on the site (paper only)
 
 The site now shows the B-S5 signal ("all good", current model) as the tab "Tín hiệu MUA/BÁN": `advisor/signals.py`, data in `advisor/extra.py`. B-S5 was picked over A-S5 because it earned more in 2023-26 (9.5% vs 7.0% a year) and reuses the live model. Each session's signals for the top 100 are saved to `output/history/signals.csv` before 9:00 the next session; the paper portfolio is rebuilt only from that log. On 26 Nov 2026 VN-Index was 8.5% below its 200-session average, so there were no buy signals.
+
+# V7: market condition and idle cash (applied)
+
+Plan: [PREREGISTRATION_V7.md](PREREGISTRATION_V7.md). Code: `research/lab_v7.py`; results in `research/v7_results.json`.
+
+| Variant | Per year 2019-22 | Per year 2023-26 | Worst fall 2019-26 | t vs live | t vs fund 2023-26 |
+|---|---|---|---|---|---|
+| M0-C live (MA200, cash) | 25.6% | 9.5% | -21% | | -0.81 |
+| **M4-E** (MA200, or MA50 and up over 20 sessions; idle money in the fund when healthy) | **33.3%** | **16.0%** | -22% | 1.79 | -0.16 |
+| M2-E (MA50; fund) | 30.5% | 13.9% | -21% | 1.01 | -0.38 |
+| M7-E (no market condition; fund) | 25.0% | 21.5% | -45% | 1.06 | 0.51 |
+| E1VFVN30 fund | 4.9% | 17.6% | -42% | | |
+
+Only M4-E passed the rule, so it is now live. With 15 challengers about 0.75 would pass by luck, and the search was shaped by knowing 2025 hurt, so the gain may be smaller in future. 2022: -13% (fund -33%); 2025: +21% (fund +54%). It still does not beat the fund in 2023-26. The signal log restarted with a new id on 27 Nov 2026.

@@ -1,9 +1,11 @@
-"""Tín hiệu MUA/GIỮ/BÁN "tất cả đều đẹp" (bản B-S5 trong STEADY_REPORT.md, V6), theo dõi TRÊN GIẤY.
+"""Tín hiệu MUA/GIỮ/BÁN "tất cả đều đẹp" (V6 B-S5, sửa theo V7 M4-E trong STEADY_REPORT.md), theo dõi TRÊN GIẤY.
 
-MUA khi đủ cả 7 điều kiện: hạng ổn định trong top 10; VN-Index trên trung bình 200 phiên; giá trên trung bình 50 phiên;
+MUA khi đủ cả 7 điều kiện: hạng ổn định trong top 10; thị trường khỏe (VN-Index trên trung bình 200 phiên, hoặc trên
+trung bình 50 phiên và cao hơn 20 phiên trước); giá trên trung bình 50 phiên;
 công ty có lãi (P/E > 0); lợi nhuận 4 quý cao hơn một năm trước; khối ngoại mua ròng 20 phiên; tiền vào ngày tăng > 50% (20 phiên).
 Mua ở giá đóng cửa phiên kế tiếp, tối đa 6 mã, mỗi mã 1/6 vốn. Giữ ít nhất 20 phiên; sau đó bán ở giá đóng cửa
 phiên kế tiếp khi tín hiệu tắt. Không mua ở giá trần, không bán ở giá sàn. Phí 0.4% khứ hồi.
+Tiền chưa dùng: để trong quỹ E1VFVN30 khi thị trường khỏe, tiền mặt khi không (0.1% mỗi lần chuyển).
 """
 from __future__ import annotations
 
@@ -17,8 +19,8 @@ from . import data, extra, steady
 from .report import ROOT
 
 LOG = os.path.join(ROOT, "output", "history", "signals.csv")
-TOPK, SLOTS, MIN_HOLD, COST = 10, 6, 20, 0.004
-COND = {"top": "Hạng ổn định trong top 10", "mkt": "VN-Index trên trung bình 200 phiên", "trend": "Giá trên trung bình 50 phiên",
+TOPK, SLOTS, MIN_HOLD, COST, FCOST = 10, 6, 20, 0.004, 0.001
+COND = {"top": "Hạng ổn định trong top 10", "mkt": "Thị trường khỏe", "trend": "Giá trên trung bình 50 phiên",
         "profit": "Công ty có lãi", "growth": "Lợi nhuận cao hơn năm trước", "foreign": "Khối ngoại mua ròng 20 phiên",
         "upvol": "Tiền vào ngày tăng nhiều hơn ngày giảm"}
 
@@ -55,11 +57,14 @@ def conditions(w: dict, now: pd.DataFrame, index: pd.DataFrame, store: dict) -> 
     idx = index.set_index("date")["close"]
     idx = idx[idx.index <= G[-1]]
     m200 = float(idx.iloc[-1] / idx.rolling(200).mean().iloc[-1] - 1)
+    m50 = float(idx.iloc[-1] / idx.rolling(50).mean().iloc[-1] - 1)
+    r20 = float(idx.iloc[-1] / idx.iloc[-21] - 1)
+    healthy = m200 > 0 or (m50 > 0 and r20 > 0)
     o = pd.DataFrame({"sym": cols, "rank": now["rank"].values, "price": now["price"].values}).set_index("sym")
     o["ma50"] = (cc.iloc[-1] / ma50 - 1).reindex(cols)
     o["pe"], o["eg"], o["fnet"], o["upvol"] = pe.iloc[-1], eg, fnet, upv
     o["top"] = o["rank"] <= TOPK
-    o["mkt"] = m200 > 0
+    o["mkt"] = healthy
     o["trend"] = o["ma50"] > 0
     o["profit"] = o["pe"] > 0
     o["growth"] = o["eg"] > 0
@@ -69,7 +74,7 @@ def conditions(w: dict, now: pd.DataFrame, index: pd.DataFrame, store: dict) -> 
     for q in COND:
         o[q] = o[q].fillna(False).astype(bool)
     o["signal"] = o[list(COND)].all(axis=1)
-    o.attrs["m200"] = m200
+    o.attrs.update(m200=m200, m50=m50, r20=r20, healthy=healthy)
     o.attrs["idx_date"] = idx.index[-1].date().isoformat()
     return o.reset_index()
 
@@ -109,7 +114,7 @@ def replay(w: dict, days: dict, fund: pd.Series) -> dict:
     """Danh mục giấy dựng lại từ sổ tín hiệu (giống research/lab_v6.py)."""
     c, raw = w["c"], w["close"]
     grid = c.index
-    res = {"nav": [], "pos": {}, "trades": [], "cash": 1.0}
+    res = {"nav": [], "pos": {}, "trades": [], "cash": 1.0, "fund": 0.0}
     if not days:
         return res
     cf = c.ffill()
@@ -117,10 +122,12 @@ def replay(w: dict, days: dict, fund: pd.Series) -> dict:
     R = R.where(R.abs() < 0.5).fillna(0)
     NT = c.isna()
     f = fund.reindex(grid).ffill()
-    pos, cash, start = {}, 1.0, min(days)
+    fr = f.pct_change(fill_method=None).fillna(0)
+    pos, cash, ev, start = {}, 1.0, 0.0, min(days)
     for i in range(start + 1, len(grid)):
         for s in pos:
             pos[s]["v"] *= 1 + R[s].iloc[i]
+        ev *= 1 + fr.iloc[i]
         prev = days.get(i - 1)
         if prev is not None:  # sổ của phiên trước hợp lệ: mới được bán / mua
             on = set(prev.index[prev["signal"]])
@@ -132,19 +139,31 @@ def replay(w: dict, days: dict, fund: pd.Series) -> dict:
                                       "ret": float(cf[s].iloc[i] / p["adj"] * (1 - COST / 2) / (1 + COST / 2) - 1),
                                       "fund": float(f.iloc[i] / f.iloc[p["i"]] - 1), "sessions": i - p["i"],
                                       "why": [COND[q] for q in COND if not bool(prev.loc[s, q])] if s in prev.index else ["Rớt khỏi rổ 100 mã"]})
-            tot = cash + sum(p["v"] for p in pos.values())
+            tot = cash + ev + sum(p["v"] for p in pos.values())
             for s in [s for s in prev.index[prev["signal"]] if s in c and s not in pos]:
                 if len(pos) >= SLOTS:
                     break
                 if NT[s].iloc[i] or R[s].iloc[i] > 0.065:
                     continue
-                a = min(tot / SLOTS, cash)
+                a = tot / SLOTS
+                if cash < a and ev > 0:  # bán bớt quỹ để có tiền mua cổ phiếu
+                    q = min(ev, a - cash)
+                    ev -= q
+                    cash += q * (1 - FCOST)
+                a = min(a, cash)
                 if a <= 1e-9:
                     break
                 cash -= a
                 pos[s] = {"v": a / (1 + COST / 2), "i": i, "adj": float(c[s].iloc[i]), "raw": float(raw[s].iloc[i])}
-        res["nav"].append((grid[i], cash + sum(p["v"] for p in pos.values())))
-    res["pos"], res["cash"] = pos, cash
+            healthy = bool(prev["mkt"].iloc[0]) if len(prev) else False
+            if healthy and cash > 0:
+                ev += cash * (1 - FCOST)
+                cash = 0.0
+            elif not healthy and ev > 0:
+                cash += ev * (1 - FCOST)
+                ev = 0.0
+        res["nav"].append((grid[i], cash + ev + sum(p["v"] for p in pos.values())))
+    res["pos"], res["cash"], res["fund"] = pos, cash, ev
     return res
 
 
@@ -181,13 +200,13 @@ def build(w: dict, now: pd.DataFrame, index: pd.DataFrame, fund: pd.Series, log:
         summ = {"start": grid[i0 + 1].date().isoformat(), "sessions": len(nav), "model": float(nav[-1][1] - 1),
                 "fund": float(f.iloc[-1] / f.iloc[i0 + 1] - 1) if len(nav) > 1 else 0.0, "trades": len(tr),
                 "win": sum(t["ret"] > 0 for t in tr), "beat": sum(t["ret"] > t["fund"] for t in tr),
-                "cash": float(pf["cash"] / nav[-1][1]), "late": late, "logged": len(days)}
+                "cash": float(pf["cash"] / nav[-1][1]), "infund": float(pf["fund"] / nav[-1][1]), "late": late, "logged": len(days)}
     rows = []
     for r in o.sort_values("rank").head(30).to_dict("records"):
         rows.append({"sym": r["sym"], "rank": int(r["rank"]), "price": float(r["price"]), "signal": bool(r["signal"]),
                      "ok": {q: bool(r[q]) for q in COND}, "ma50": _f(r["ma50"]), "pe": _f(r["pe"]), "eg": _f(r["eg"]),
                      "fnet": _f(r["fnet"]), "upvol": _f(r["upvol_v"])})
-    return {"id": sig_id(), "asof": pd.Timestamp(asof).date().isoformat(), "cond": COND, "market": {"m200": o.attrs["m200"], "ok": bool(o.attrs["m200"] > 0), "date": o.attrs["idx_date"]},
+    return {"id": sig_id(), "asof": pd.Timestamp(asof).date().isoformat(), "cond": COND, "market": {"m200": o.attrs["m200"], "m50": o.attrs["m50"], "r20": o.attrs["r20"], "ok": bool(o.attrs["healthy"]), "date": o.attrs["idx_date"]},
             "signals": [r["sym"] for r in rows if r["signal"]], "buy": [{"sym": s, "price": float(o.set_index("sym").loc[s, "price"])} for s in buys],
             "held": held, "trades": pf["trades"][::-1][:50], "summary": summ, "rows": rows}
 
